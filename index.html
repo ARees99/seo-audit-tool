@@ -29,31 +29,59 @@
     h1, h2, h3 { margin-bottom: 0.5rem; }
     p { margin: 0.5rem 0; }
     .error { color: red; }
+    .loader {
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #007bff;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 1rem auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
   <h1>SEO Audit Tool</h1>
-  <p>Enter a URL to analyze its SEO basics (title, meta description, H1 tags, and PageSpeed score).</p>
+  <p>Enter a URL to analyze its SEO basics and performance score.</p>
   <input id="urlInput" type="text" placeholder="https://example.com" />
   <button onclick="runAudit()">Run Audit</button>
+  <button id="cancelButton" class="hidden" onclick="cancelAudit()">Cancel Audit</button>
 
   <div id="results" class="result"></div>
 
   <script>
-    const apiKey = "AIzaSyDYnYVicNNc07jd6KJCpHCS8kNzOn42GXY"; // 🔑 Replace with your real API key
+    const apiKey = "YOUR_GOOGLE_API_KEY_HERE"; // Replace this
+    let controller = null;
+    let cancelled = false;
 
     async function runAudit() {
-      const url = document.getElementById("urlInput").value;
+      const url = document.getElementById("urlInput").value.trim();
       const results = document.getElementById("results");
-      results.innerHTML = "<p>Auditing...</p>";
+      const cancelBtn = document.getElementById("cancelButton");
+      cancelled = false;
+      controller = new AbortController();
+      results.innerHTML = `
+        <div class="loader"></div>
+        <p>Auditing... this may take 5–10 seconds for some sites.</p>
+      `;
+      cancelBtn.classList.remove("hidden");
 
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8000);
+      // Show "still working" message after 10s
+      setTimeout(() => {
+        if (!cancelled && results.innerHTML.includes("Auditing...")) {
+          results.innerHTML += `<p style="color: orange;">Still working... please wait a few more seconds.</p>`;
+        }
+      }, 10000);
 
       try {
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
         const res = await fetch(proxyUrl, { signal: controller.signal });
-        clearTimeout(timeout);
+        if (cancelled) return;
 
         if (!res.ok) throw new Error("Failed to fetch site content");
 
@@ -75,16 +103,24 @@
         `;
 
         await fetchPageSpeedData(url);
-
       } catch (err) {
-        clearTimeout(timeout);
-        results.innerHTML = `<p class="error">Error: ${err.message || "Audit failed or timed out."}</p>`;
+        if (!cancelled) {
+          results.innerHTML = `<p class="error">Error: ${err.message || "Audit failed or timed out."}</p>`;
+        }
+      } finally {
+        cancelBtn.classList.add("hidden");
       }
+    }
+
+    function cancelAudit() {
+      cancelled = true;
+      if (controller) controller.abort();
+      document.getElementById("results").innerHTML = "<p style='color: orange;'>Audit cancelled.</p>";
+      document.getElementById("cancelButton").classList.add("hidden");
     }
 
     async function fetchPageSpeedData(url) {
       const results = document.getElementById("results");
-
       try {
         const response = await fetch(
           `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=mobile&key=${apiKey}`
@@ -95,7 +131,7 @@
         if (!data.lighthouseResult || !data.lighthouseResult.categories) {
           results.innerHTML += `
             <p class="error">
-              PageSpeed Error: No Lighthouse results found. The site may block audits or the page failed to render fully.
+              PageSpeed Error: No Lighthouse results found. Site may block audits or page failed to render.
             </p>`;
           return;
         }
@@ -118,7 +154,9 @@
           <p><strong>Accessibility Score:</strong> ${accessibilityScore}/100</p>
         `;
       } catch (err) {
-        results.innerHTML += `<p class="error">PageSpeed Error: ${err.message || "Unknown error"}</p>`;
+        if (!cancelled) {
+          results.innerHTML += `<p class="error">PageSpeed Error: ${err.message || "Unknown error."}</p>`;
+        }
       }
     }
   </script>
