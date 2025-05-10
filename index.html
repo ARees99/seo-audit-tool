@@ -91,8 +91,14 @@ async function fetchPageSpeedData(url) {
     );
     const data = await response.json();
 
-    const lighthouse = data.lighthouseResult.categories;
-    const metrics = data.lighthouseResult.audits;
+    if (!data.lighthouseResult) {
+  results.innerHTML += `<p style="color:red;">PageSpeed Error: No results returned for this URL. The site may block audits or take too long to load.</p>`;
+  return;
+}
+
+const lighthouse = data.lighthouseResult.categories;
+const metrics = data.lighthouseResult.audits;
+
 
     const score = Math.round(lighthouse.performance.score * 100);
     const fcp = metrics['first-contentful-paint'].displayValue;
