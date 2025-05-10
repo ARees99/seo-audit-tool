@@ -40,34 +40,42 @@
   <div id="results" class="result"></div>
 
   <script>
-    async function runAudit() {
-      const url = document.getElementById("urlInput").value;
-      const results = document.getElementById("results");
-      results.innerHTML = "<p>Auditing...</p>";
+  async function runAudit() {
+    const url = document.getElementById("urlInput").value;
+    const results = document.getElementById("results");
+    results.innerHTML = "<p>Auditing...</p>";
 
-      try {
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-        const res = await fetch(proxyUrl);
-        const data = await res.json();
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000); // 8-second timeout
 
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(data.contents, "text/html");
+    try {
+      const res = await fetch(proxyUrl, { signal: controller.signal });
+      clearTimeout(timeout);
 
-        const title = doc.querySelector("title")?.textContent || "No title";
-        const description = doc.querySelector("meta[name='description']")?.content || "No meta description";
-        const h1s = [...doc.querySelectorAll("h1")].map(h1 => h1.textContent.trim());
+      if (!res.ok) throw new Error("Failed to fetch site content");
 
-        results.innerHTML = `
-          <h2>Audit Results</h2>
-          <p><strong>Title:</strong> ${title}</p>
-          <p><strong>Meta Description:</strong> ${description}</p>
-          <p><strong>H1 Tags Found (${h1s.length}):</strong></p>
-          <ul>${h1s.map(tag => `<li>${tag}</li>`).join('')}</ul>
-        `;
-      } catch (err) {
-        results.innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
-      }
+      const data = await res.json();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(data.contents, "text/html");
+
+      const title = doc.querySelector("title")?.textContent || "No title";
+      const description = doc.querySelector("meta[name='description']")?.content || "No meta description";
+      const h1s = [...doc.querySelectorAll("h1")].map(h1 => h1.textContent.trim());
+
+      results.innerHTML = `
+        <h2>Audit Results</h2>
+        <p><strong>Title:</strong> ${title}</p>
+        <p><strong>Meta Description:</strong> ${description}</p>
+        <p><strong>H1 Tags Found (${h1s.length}):</strong></p>
+        <ul>${h1s.map(tag => `<li>${tag}</li>`).join('')}</ul>
+      `;
+    } catch (err) {
+      clearTimeout(timeout);
+      results.innerHTML = `<p style="color:red;">Error: ${err.message || "Audit failed or timed out."}</p>`;
     }
-  </script>
+  }
+</script>
+
 </body>
 </html>
