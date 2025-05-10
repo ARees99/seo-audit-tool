@@ -7,13 +7,13 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f5f5f5;
+      background: #f4f4f4;
       padding: 2rem;
-      max-width: 700px;
+      max-width: 800px;
       margin: auto;
     }
     input, button {
-      padding: 0.5rem;
+      padding: 0.6rem;
       font-size: 1rem;
       margin-top: 1rem;
       width: 100%;
@@ -27,6 +27,8 @@
     }
     ul { padding-left: 20px; }
     h1, h2, h3 { margin-bottom: 0.5rem; }
+    p { margin: 0.5rem 0; }
+    .error { color: red; }
   </style>
 </head>
 <body>
@@ -38,7 +40,7 @@
   <div id="results" class="result"></div>
 
   <script>
-    const apiKey = "YOUR_GOOGLE_API_KEY_HERE"; // 🔑 Replace this with your real API key
+    const apiKey = "YOUR_GOOGLE_API_KEY_HERE"; // 🔑 Replace with your real API key
 
     async function runAudit() {
       const url = document.getElementById("urlInput").value;
@@ -76,7 +78,7 @@
 
       } catch (err) {
         clearTimeout(timeout);
-        results.innerHTML = `<p style="color:red;">Error: ${err.message || "Audit failed or timed out."}</p>`;
+        results.innerHTML = `<p class="error">Error: ${err.message || "Audit failed or timed out."}</p>`;
       }
     }
 
@@ -85,13 +87,16 @@
 
       try {
         const response = await fetch(
-          `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&key=${apiKey}`
+          `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=mobile&key=${apiKey}`
         );
         const data = await response.json();
-        console.log("PageSpeed Response:", data); // for debugging
+        console.log("PageSpeed API Response:", data);
 
         if (!data.lighthouseResult || !data.lighthouseResult.categories) {
-          results.innerHTML += `<p style="color:red;">PageSpeed Error: Unable to retrieve score. Site may block audits or API key may be restricted.</p>`;
+          results.innerHTML += `
+            <p class="error">
+              PageSpeed Error: No Lighthouse results found. The site may block audits or the page failed to render fully.
+            </p>`;
           return;
         }
 
@@ -99,8 +104,8 @@
         const metrics = data.lighthouseResult.audits;
 
         const score = Math.round(lighthouse.performance.score * 100);
-        const fcp = metrics['first-contentful-paint'].displayValue;
-        const lcp = metrics['largest-contentful-paint'].displayValue;
+        const fcp = metrics['first-contentful-paint']?.displayValue || "N/A";
+        const lcp = metrics['largest-contentful-paint']?.displayValue || "N/A";
         const seoScore = Math.round(lighthouse.seo.score * 100);
         const accessibilityScore = Math.round(lighthouse.accessibility.score * 100);
 
@@ -113,7 +118,7 @@
           <p><strong>Accessibility Score:</strong> ${accessibilityScore}/100</p>
         `;
       } catch (err) {
-        results.innerHTML += `<p style="color:red;">PageSpeed Error: ${err.message || "Unknown error."}</p>`;
+        results.innerHTML += `<p class="error">PageSpeed Error: ${err.message || "Unknown error"}</p>`;
       }
     }
   </script>
