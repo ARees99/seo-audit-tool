@@ -47,44 +47,31 @@
 </head>
 <body>
   <h1>SEO Audit Tool</h1>
-  <p>Enter a URL to analyze its SEO basics and performance score.</p>
+  <p>Enter a URL to analyze its SEO basics. You can fetch PageSpeed score separately if needed.</p>
   <input id="urlInput" type="text" placeholder="https://example.com" />
-  <button onclick="runAudit()">Run Audit</button>
-  <button id="cancelButton" class="hidden" onclick="cancelAudit()">Cancel Audit</button>
+  <button onclick="runAudit()">Run SEO Audit</button>
+  <button id="showSpeedBtn" class="hidden" onclick="fetchPageSpeed()">Show PageSpeed Performance</button>
 
   <div id="results" class="result"></div>
 
   <script>
-    const apiKey = "AIzaSyDYnYVicNNc07jd6KJCpHCS8kNzOn42GXY"; // 🔑 Replace this
-    let controller = null;
-    let psController = null;
-    let cancelled = false;
+    const apiKey = "AIzaSyDYnYVicNNc07jd6KJCpHCS8kNzOn42GXY"; // Replace with your key
+    let lastURL = "";
 
     async function runAudit() {
       const url = document.getElementById("urlInput").value.trim();
       const results = document.getElementById("results");
-      const cancelBtn = document.getElementById("cancelButton");
-      cancelled = false;
-      controller = new AbortController();
-      psController = new AbortController();
+      const speedBtn = document.getElementById("showSpeedBtn");
+      lastURL = url;
       results.innerHTML = `
         <div class="loader"></div>
-        <p>Auditing website HTML (title, meta, H1)...</p>
+        <p>Running SEO audit...</p>
       `;
-      cancelBtn.classList.remove("hidden");
-
-      // Still-working notice after 10s
-      setTimeout(() => {
-        if (!cancelled && results.innerHTML.includes("Auditing")) {
-          results.innerHTML += `<p style="color: orange;">Still working... some sites may take longer.</p>`;
-        }
-      }, 10000);
+      speedBtn.classList.add("hidden");
 
       try {
         const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-        const res = await fetch(proxyUrl, { signal: controller.signal });
-        if (cancelled) return;
-
+        const res = await fetch(proxyUrl);
         if (!res.ok) throw new Error("Failed to fetch site content");
 
         const data = await res.json();
@@ -96,53 +83,42 @@
         const h1s = [...doc.querySelectorAll("h1")].map(h1 => h1.textContent.trim());
 
         results.innerHTML = `
-          <h2>Audit Results</h2>
+          <h2>SEO Audit Results</h2>
           <p><strong>Title:</strong> ${title}</p>
           <p><strong>Meta Description:</strong> ${description}</p>
           <p><strong>H1 Tags Found (${h1s.length}):</strong></p>
           <ul>${h1s.map(tag => `<li>${tag}</li>`).join('')}</ul>
-          <div id="pagespeedLoader">
-            <div class="loader"></div>
-            <p><em>Fetching PageSpeed data (this may take 5–10 seconds)...</em></p>
-          </div>
+          <p><em>You can check PageSpeed performance below if needed.</em></p>
         `;
 
-        await fetchPageSpeedData(url);
+        speedBtn.classList.remove("hidden");
       } catch (err) {
-        if (!cancelled) {
-          results.innerHTML = `<p class="error">Error: ${err.message || "Audit failed or timed out."}</p>`;
-        }
-      } finally {
-        cancelBtn.classList.add("hidden");
+        results.innerHTML = `<p class="error">Error: ${err.message || "Audit failed."}</p>`;
       }
     }
 
-    function cancelAudit() {
-      cancelled = true;
-      if (controller) controller.abort();
-      if (psController) psController.abort();
-      document.getElementById("results").innerHTML = "<p style='color: orange;'>Audit cancelled.</p>";
-      document.getElementById("cancelButton").classList.add("hidden");
-    }
-
-    async function fetchPageSpeedData(url) {
+    async function fetchPageSpeed() {
       const results = document.getElementById("results");
+      const speedBtn = document.getElementById("showSpeedBtn");
 
-      const timeout = setTimeout(() => psController.abort(), 10000); // 10s timeout
+      speedBtn.disabled = true;
+      results.innerHTML += `
+        <div id="pagespeedLoader">
+          <div class="loader"></div>
+          <p><em>Fetching PageSpeed data (desktop)...</em></p>
+        </div>
+      `;
+
       try {
         const response = await fetch(
-          `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=mobile&key=${apiKey}`,
-          { signal: psController.signal }
+          `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(lastURL)}&strategy=desktop&key=${apiKey}`
         );
-        clearTimeout(timeout);
         const data = await response.json();
         document.getElementById("pagespeedLoader")?.remove();
 
         if (!data.lighthouseResult || !data.lighthouseResult.categories) {
           results.innerHTML += `
-            <p class="error">
-              PageSpeed Error: No Lighthouse results found. Site may block audits or failed to render.
-            </p>`;
+            <p class="error">PageSpeed Error: No Lighthouse results found. The site may block audits or fail to render.</p>`;
           return;
         }
 
@@ -156,7 +132,7 @@
         const accessibilityScore = Math.round(lighthouse.accessibility.score * 100);
 
         results.innerHTML += `
-          <h3>PageSpeed Insights</h3>
+          <h3>PageSpeed Insights (Desktop)</h3>
           <p><strong>Performance Score:</strong> ${score}/100</p>
           <p><strong>First Contentful Paint:</strong> ${fcp}</p>
           <p><strong>Largest Contentful Paint:</strong> ${lcp}</p>
@@ -164,11 +140,8 @@
           <p><strong>Accessibility Score:</strong> ${accessibilityScore}/100</p>
         `;
       } catch (err) {
-        clearTimeout(timeout);
         document.getElementById("pagespeedLoader")?.remove();
-        if (!cancelled) {
-          results.innerHTML += `<p class="error">PageSpeed Error: ${err.message || "Unknown error."}</p>`;
-        }
+        results.innerHTML += `<p class="error">PageSpeed Error: ${err.message || "Unknown error."}</p>`;
       }
     }
   </script>
