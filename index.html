@@ -47,7 +47,7 @@
 </head>
 <body>
   <h1>SEO Audit Tool</h1>
-  <p>Enter a URL to analyze its SEO basics. You can fetch PageSpeed score separately if needed.</p>
+  <p>Enter a URL to analyze its SEO basics. You can check PageSpeed separately.</p>
   <input id="urlInput" type="text" placeholder="https://example.com" />
   <button onclick="runAudit()">Run SEO Audit</button>
   <button id="showSpeedBtn" class="hidden" onclick="fetchPageSpeed()">Show PageSpeed Performance</button>
@@ -55,7 +55,7 @@
   <div id="results" class="result"></div>
 
   <script>
-    const apiKey = "AIzaSyDYnYVicNNc07jd6KJCpHCS8kNzOn42GXY"; // Replace with your key
+    const apiKey = "AIzaSyDYnYVicNNc07jd6KJCpHCS8kNzOn42GXY"; // Replace with your real key
     let lastURL = "";
 
     async function runAudit() {
@@ -65,18 +65,23 @@
       lastURL = url;
       results.innerHTML = `
         <div class="loader"></div>
-        <p>Running SEO audit...</p>
+        <p>Auditing website HTML (title, meta, H1)...</p>
       `;
       speedBtn.classList.add("hidden");
 
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000); // 10s
+
       try {
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-        const res = await fetch(proxyUrl);
+        const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
+        const res = await fetch(proxyUrl, { signal: controller.signal });
+        clearTimeout(timeout);
+
         if (!res.ok) throw new Error("Failed to fetch site content");
 
-        const data = await res.json();
+        const html = await res.text();
         const parser = new DOMParser();
-        const doc = parser.parseFromString(data.contents, "text/html");
+        const doc = parser.parseFromString(html, "text/html");
 
         const title = doc.querySelector("title")?.textContent || "No title";
         const description = doc.querySelector("meta[name='description']")?.content || "No meta description";
@@ -93,15 +98,16 @@
 
         speedBtn.classList.remove("hidden");
       } catch (err) {
-        results.innerHTML = `<p class="error">Error: ${err.message || "Audit failed."}</p>`;
+        clearTimeout(timeout);
+        results.innerHTML = `<p class="error">HTML Audit Error: ${err.message || "Timeout or blocked content."}</p>`;
       }
     }
 
     async function fetchPageSpeed() {
       const results = document.getElementById("results");
       const speedBtn = document.getElementById("showSpeedBtn");
-
       speedBtn.disabled = true;
+
       results.innerHTML += `
         <div id="pagespeedLoader">
           <div class="loader"></div>
@@ -109,10 +115,15 @@
         </div>
       `;
 
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000); // 10s
+
       try {
         const response = await fetch(
-          `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(lastURL)}&strategy=desktop&key=${apiKey}`
+          `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(lastURL)}&strategy=desktop&key=${apiKey}`,
+          { signal: controller.signal }
         );
+        clearTimeout(timeout);
         const data = await response.json();
         document.getElementById("pagespeedLoader")?.remove();
 
@@ -140,8 +151,9 @@
           <p><strong>Accessibility Score:</strong> ${accessibilityScore}/100</p>
         `;
       } catch (err) {
+        clearTimeout(timeout);
         document.getElementById("pagespeedLoader")?.remove();
-        results.innerHTML += `<p class="error">PageSpeed Error: ${err.message || "Unknown error."}</p>`;
+        results.innerHTML += `<p class="error">PageSpeed Error: ${err.message || "Timeout or fetch failed."}</p>`;
       }
     }
   </script>
