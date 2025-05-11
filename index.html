@@ -3,30 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FreeSEO Audit</title>
+  <title>FreeSEO Audit Tool</title>
   <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 text-gray-800">
-  <div class="max-w-3xl mx-auto p-6">
-    <h1 class="text-2xl font-bold mb-4">Enter Website URL</h1>
-    <form id="urlForm" class="flex gap-4 mb-6">
-      <input
-        type="text"
-        id="urlInput"
-        placeholder="example.com"
-        class="flex-grow p-2 border rounded-md"
-        required
-      />
-      <button
-        type="submit"
-        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-      >
-        Audit
-      </button>
-    </form>
+  <style>
+    body {
+      background: linear-gradient(135deg, #c3e5f5, #f8f9fa);
+      background-size: 400% 400%;
+      animation: gradientMove 15s ease infinite;
+    }
 
-    <div id="results" class="space-y-6"></div>
-  </div>
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+  </style>
+</head>
+<body class="text-gray-800">
+  <!-- Navigation bar -->
+  <nav class="bg-white shadow-md p-4 flex items-center justify-between">
+    <div class="flex items-center space-x-4">
+      <img src="logo.png" alt="FreeSEO Logo" class="w-8 h-8" />
+      <span class="text-xl font-bold text-gray-800">FreeSEO</span>
+    </div>
+  </nav>
+
+  <main class="max-w-4xl mx-auto p-6 space-y-6">
+    <!-- Search bar -->
+    <div class="bg-white p-6 rounded-lg shadow">
+      <h2 class="text-lg font-semibold mb-4">Enter Website URL</h2>
+      <form id="urlForm" class="flex gap-4">
+        <input type="text" id="urlInput" placeholder="e.g. bbc" class="flex-1 border border-gray-300 rounded px-4 py-2" />
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Audit</button>
+      </form>
+    </div>
+
+    <!-- Results area -->
+    <div id="results"></div>
+  </main>
 
   <script>
     const icons = { pass: "✅", fail: "❌", warn: "⚠️" };
@@ -34,19 +48,14 @@
 
     function normalizeUrl(input) {
       let url = input.trim();
-
-      // Add https:// if missing
       if (!/^https?:\/\//i.test(url)) {
-        url = "https://" + url;
+        url = 'https://' + url;
       }
-
-      // If missing domain extension, add .com
-      const domainPattern = /^(https?:\/\/)?([\w.-]+)\.[a-z]{2,}(\/.*)?$/i;
-      if (!domainPattern.test(url)) {
-        url = url.replace(/^https?:\/\//, "") + ".com";
-        url = "https://" + url;
+      const hasDomain = /\.[a-z]{2,}(\/|$)/i.test(url);
+      if (!hasDomain) {
+        url = url.replace(/^https?:\/\//i, '');
+        url = 'https://' + url + '.com';
       }
-
       return url;
     }
 
@@ -80,10 +89,36 @@
           heading.textContent = title;
           section.appendChild(heading);
 
-          checks.forEach(({ text, status }) => {
-            const p = document.createElement("p");
-            p.className = `flex items-center gap-2 mb-2 ${colors[status]}`;
-            p.innerHTML = `<span>${icons[status]}</span><span>${text}</span>`;
+          checks.forEach(({ text, status, links }) => {
+            const p = document.createElement("div");
+            p.className = `mb-2 ${colors[status]}`;
+            p.innerHTML = `<div class="flex items-center gap-2 mb-1">
+              <span>${icons[status]}</span><span>${text}</span>
+            </div>`;
+
+            if (Array.isArray(links) && links.length > 0) {
+              const toggle = document.createElement("button");
+              toggle.className = "text-sm text-blue-600 underline mb-1";
+              toggle.textContent = "Show image links";
+
+              const list = document.createElement("ul");
+              list.className = "ml-6 mt-2 space-y-1 hidden";
+
+              links.forEach(link => {
+                const li = document.createElement("li");
+                li.innerHTML = `<a href="${link}" target="_blank" class="underline text-sm text-blue-500">${link}</a>`;
+                list.appendChild(li);
+              });
+
+              toggle.addEventListener("click", () => {
+                list.classList.toggle("hidden");
+                toggle.textContent = list.classList.contains("hidden") ? "Show image links" : "Hide image links";
+              });
+
+              p.appendChild(toggle);
+              p.appendChild(list);
+            }
+
             section.appendChild(p);
           });
 
@@ -91,7 +126,7 @@
         }
       } catch (err) {
         console.error(err);
-        results.innerHTML += `<p class="text-red-600 mt-4">Error: Failed to fetch or parse the website.</p>`;
+        results.innerHTML += `<p class="text-red-600 mt-4">Failed to fetch audit results. Is your backend running?</p>`;
       }
     });
   </script>
