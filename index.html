@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SEO Audit Tool</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,11 +14,15 @@
       max-width: 800px;
       margin: auto;
     }
-    input, button {
+    input, button, label {
       padding: 0.6rem;
       font-size: 1rem;
       margin-top: 1rem;
       width: 100%;
+    }
+    input[type="checkbox"], input[type="text"] {
+      width: auto;
+      margin-right: 10px;
     }
     .result {
       margin-top: 2rem;
@@ -26,9 +32,13 @@
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     ul { padding-left: 20px; }
-    h1, h2, h3 { margin-bottom: 0.5rem; }
-    p { margin: 0.5rem 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ddd; padding: 8px; font-size: 0.9rem; }
+    th { background: #f0f0f0; }
+    img.thumb { width: 40px; height: auto; object-fit: contain; }
     .error { color: red; }
+    .warn { color: orange; }
+    .success { color: green; }
     .loader {
       border: 6px solid #f3f3f3;
       border-top: 6px solid #007bff;
@@ -43,119 +53,162 @@
       100% { transform: rotate(360deg); }
     }
     .hidden { display: none; }
+    .export-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 1rem; }
+    .export-buttons button { flex: 1; }
   </style>
 </head>
 <body>
   <h1>SEO Audit Tool</h1>
-  <p>Enter a URL to analyze its SEO basics. You can check PageSpeed separately.</p>
+  <p>Analyze SEO structure, keywords, image metadata, and export reports.</p>
+
   <input id="urlInput" type="text" placeholder="https://example.com" />
+  <label><input type="checkbox" id="checkStructure" /> Check structure and accessibility</label>
+  <input type="text" id="keywordInput" placeholder="Target keyword (optional)" />
   <button onclick="runAudit()">Run SEO Audit</button>
+
   <button id="showSpeedBtn" class="hidden" onclick="fetchPageSpeed()">Show PageSpeed Performance</button>
+
+  <div class="export-buttons hidden" id="exportButtons">
+    <button onclick="exportPDF('styled')">Download Styled PDF</button>
+    <button onclick="exportPDF('minimal')">Download Minimal PDF</button>
+    <button onclick="exportCSV()">Download CSV</button>
+  </div>
 
   <div id="results" class="result"></div>
 
   <script>
-    const apiKey = "AIzaSyDYnYVicNNc07jd6KJCpHCS8kNzOn42GXY"; // Replace with your real key
-    let lastURL = "";
+  const apiKey = "AIzaSyDYnYVicNNc07jd6KJCpHCS8kNzOn42GXY";
+  let lastURL = "", lastReport = "";
 
-    async function runAudit() {
-      const url = document.getElementById("urlInput").value.trim();
-      const results = document.getElementById("results");
-      const speedBtn = document.getElementById("showSpeedBtn");
-      lastURL = url;
+  async function runAudit() {
+    const url = document.getElementById("urlInput").value.trim();
+    const keyword = document.getElementById("keywordInput").value.trim().toLowerCase();
+    const checkStructure = document.getElementById("checkStructure").checked;
+    const results = document.getElementById("results");
+    const speedBtn = document.getElementById("showSpeedBtn");
+    const exportBtns = document.getElementById("exportButtons");
+
+    lastURL = url;
+    results.innerHTML = `<div class="loader"></div><p>Running audit...</p>`;
+    speedBtn.classList.add("hidden");
+    exportBtns.classList.add("hidden");
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    try {
+      const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
+      const res = await fetch(proxyUrl, { signal: controller.signal });
+      clearTimeout(timeout);
+      if (!res.ok) throw new Error("Failed to fetch site content");
+
+      const html = await res.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+
+      const title = doc.querySelector("title")?.textContent || "No title";
+      const description = doc.querySelector("meta[name='description']")?.content || "No meta description";
+      const h1 = doc.querySelector("h1")?.textContent || "None";
+
+      let report = `Title: ${title}\nMeta Description: ${description}\nH1: ${h1}\n`;
+
       results.innerHTML = `
-        <div class="loader"></div>
-        <p>Auditing website HTML (title, meta, H1)...</p>
+        <h2>SEO Audit Results</h2>
+        <p><strong>Title:</strong> ${title}</p>
+        <p><strong>Meta Description:</strong> ${description}</p>
+        <p><strong>H1:</strong> ${h1}</p>
       `;
-      speedBtn.classList.add("hidden");
 
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000); // 10s
+      const headings = [...doc.querySelectorAll("h1,h2,h3,h4,h5,h6")];
+      const allImgs = [...doc.querySelectorAll("img")];
+      const tagCount = doc.body.querySelectorAll("*").length;
+      const text = doc.body.innerText;
+      const words = text.split(/\s+/).filter(w => w.length > 3).length;
+      const density = Math.round((words / tagCount) * 100) / 100;
+      report += `Word Count: ${words}\nContent Density: ${density} words/tag\n`;
 
-      try {
-        const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
-        const res = await fetch(proxyUrl, { signal: controller.signal });
-        clearTimeout(timeout);
+      if (checkStructure) {
+        const missingAlts = allImgs.filter(img => !img.alt).length;
+        const badNames = allImgs.filter(img => {
+          const name = img.src.split("/").pop() || "";
+          return !/^[a-z0-9\-]+(\.jpg|\.png|\.jpeg|\.webp|\.gif)$/i.test(name) || /(image|img|abc|xyz|123|logo)/i.test(name);
+        }).length;
 
-        if (!res.ok) throw new Error("Failed to fetch site content");
+        results.innerHTML += `<p><strong>Images Found:</strong> ${allImgs.length}</p>`;
+        results.innerHTML += `<p class="${missingAlts ? 'warn' : 'success'}">Alt tags missing: ${missingAlts}</p>`;
+        results.innerHTML += `<p class="${badNames ? 'warn' : 'success'}">Non-descriptive filenames: ${badNames}</p>`;
 
-        const html = await res.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
-
-        const title = doc.querySelector("title")?.textContent || "No title";
-        const description = doc.querySelector("meta[name='description']")?.content || "No meta description";
-        const h1s = [...doc.querySelectorAll("h1")].map(h1 => h1.textContent.trim());
-
-        results.innerHTML = `
-          <h2>SEO Audit Results</h2>
-          <p><strong>Title:</strong> ${title}</p>
-          <p><strong>Meta Description:</strong> ${description}</p>
-          <p><strong>H1 Tags Found (${h1s.length}):</strong></p>
-          <ul>${h1s.map(tag => `<li>${tag}</li>`).join('')}</ul>
-          <p><em>You can check PageSpeed performance below if needed.</em></p>
-        `;
-
-        speedBtn.classList.remove("hidden");
-      } catch (err) {
-        clearTimeout(timeout);
-        results.innerHTML = `<p class="error">HTML Audit Error: ${err.message || "Timeout or blocked content."}</p>`;
+        report += `Images: ${allImgs.length}\nAlt Tags Missing: ${missingAlts}\nBad Filenames: ${badNames}\n`;
       }
+
+      if (keyword) {
+        const matched = [];
+        if (title.toLowerCase().includes(keyword)) matched.push("✓ In Title");
+        if (description.toLowerCase().includes(keyword)) matched.push("✓ In Meta Description");
+        if (h1.toLowerCase().includes(keyword)) matched.push("✓ In H1");
+        if (allImgs.some(img => img.src.toLowerCase().includes(keyword))) matched.push("✓ In Image Filename");
+
+        results.innerHTML += `<p><strong>Keyword Match (“${keyword}”):</strong> ${matched.length ? matched.join(", ") : '<span class="warn">None Found</span>'}</p>`;
+        report += `Keyword (“${keyword}”): ${matched.length ? matched.join(", ") : 'Not found'}\n`;
+      }
+
+      lastReport = report;
+      speedBtn.classList.remove("hidden");
+      exportBtns.classList.remove("hidden");
+
+    } catch (err) {
+      results.innerHTML = `<p class="error">Audit Error: ${err.message}</p>`;
     }
+  }
 
-    async function fetchPageSpeed() {
-      const results = document.getElementById("results");
-      const speedBtn = document.getElementById("showSpeedBtn");
-      speedBtn.disabled = true;
+  function exportPDF(type) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    if (type === "styled") {
+      doc.setFontSize(16);
+      doc.text("SEO Audit Report", 10, 20);
+      doc.setFontSize(12);
+      const lines = lastReport.split("\n");
+      let y = 30;
+      lines.forEach(line => {
+        doc.text(line, 10, y);
+        y += 8;
+      });
+    } else {
+      doc.text(lastReport, 10, 10);
+    }
+    doc.save(`seo-report-${type}.pdf`);
+  }
 
+  function exportCSV() {
+    const csvContent = `data:text/csv;charset=utf-8,${lastReport.replace(/\n/g, "\n")}`;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, `seo-report.csv`);
+  }
+
+  async function fetchPageSpeed() {
+    const results = document.getElementById("results");
+    results.innerHTML += `<div class="loader"></div><p>Fetching PageSpeed...</p>`;
+    const response = await fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(lastURL)}&strategy=desktop&key=${apiKey}`);
+    const data = await response.json();
+    document.querySelector(".loader")?.remove();
+
+    if (data.lighthouseResult) {
+      const perf = data.lighthouseResult.categories.performance.score * 100;
+      const fcp = data.lighthouseResult.audits['first-contentful-paint']?.displayValue || "N/A";
       results.innerHTML += `
-        <div id="pagespeedLoader">
-          <div class="loader"></div>
-          <p><em>Fetching PageSpeed data (desktop)...</em></p>
-        </div>
+        <h3>PageSpeed Insights</h3>
+        <p><strong>Performance:</strong> ${perf}/100</p>
+        <p><strong>First Contentful Paint:</strong> ${fcp}</p>
       `;
-
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000); // 10s
-
-      try {
-        const response = await fetch(
-          `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(lastURL)}&strategy=desktop&key=${apiKey}`,
-          { signal: controller.signal }
-        );
-        clearTimeout(timeout);
-        const data = await response.json();
-        document.getElementById("pagespeedLoader")?.remove();
-
-        if (!data.lighthouseResult || !data.lighthouseResult.categories) {
-          results.innerHTML += `
-            <p class="error">PageSpeed Error: No Lighthouse results found. The site may block audits or fail to render.</p>`;
-          return;
-        }
-
-        const lighthouse = data.lighthouseResult.categories;
-        const metrics = data.lighthouseResult.audits;
-
-        const score = Math.round(lighthouse.performance.score * 100);
-        const fcp = metrics['first-contentful-paint']?.displayValue || "N/A";
-        const lcp = metrics['largest-contentful-paint']?.displayValue || "N/A";
-        const seoScore = Math.round(lighthouse.seo.score * 100);
-        const accessibilityScore = Math.round(lighthouse.accessibility.score * 100);
-
-        results.innerHTML += `
-          <h3>PageSpeed Insights (Desktop)</h3>
-          <p><strong>Performance Score:</strong> ${score}/100</p>
-          <p><strong>First Contentful Paint:</strong> ${fcp}</p>
-          <p><strong>Largest Contentful Paint:</strong> ${lcp}</p>
-          <p><strong>SEO Score:</strong> ${seoScore}/100</p>
-          <p><strong>Accessibility Score:</strong> ${accessibilityScore}/100</p>
-        `;
-      } catch (err) {
-        clearTimeout(timeout);
-        document.getElementById("pagespeedLoader")?.remove();
-        results.innerHTML += `<p class="error">PageSpeed Error: ${err.message || "Timeout or fetch failed."}</p>`;
-      }
+    } else {
+      results.innerHTML += `<p class="error">PageSpeed Error: Could not fetch results.</p>`;
     }
-  </script>
+  }
+</script>
 </body>
 </html>
+
+
+
+  
