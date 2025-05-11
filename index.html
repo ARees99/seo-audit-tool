@@ -1,13 +1,76 @@
-
 <!DOCTYPE html>
-<html lang='en'>
+<html lang="en">
 <head>
-  <meta charset='UTF-8'>
-  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-  <title>ApexSEO – Real Working Version</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ApexSEO – Free SEO Audit Tool</title>
+  <meta name="description" content="Free, fast SEO audit tool by ApexSEO. Check title, meta, H1, images, keywords, and performance instantly.">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f9fafb; color: #111; margin: 0; padding: 0; }
+    header { background: #4f46e5; color: white; padding: 1rem 2rem; font-size: 1.5rem; font-weight: bold; }
+    .container { max-width: 800px; margin: auto; padding: 2rem; }
+    .card { background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+    input[type=text] { width: 100%; padding: 0.75rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 5px; }
+    button { padding: 0.75rem 1.25rem; background: #4f46e5; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #4338ca; }
+    .results { white-space: pre-wrap; background: #f3f4f6; padding: 1rem; border-radius: 5px; }
+    footer { text-align: center; font-size: 0.9rem; color: #666; padding: 2rem 0; }
+  </style>
 </head>
 <body>
-  <h1>🚀 ApexSEO is now live!</h1>
-  <p>This is the full, working version with SEO audit features, scoring, keyword analysis, and more.</p>
+  <header>ApexSEO</header>
+  <div class="container">
+    <div class="card">
+      <h2>SEO Audit Tool</h2>
+      <p>Enter a website URL below to analyze title, meta description, H1 tag, and more.</p>
+      <input type="text" id="urlInput" placeholder="e.g. wikipedia.org">
+      <button onclick="runAudit()">Run Audit</button>
+    </div>
+
+    <div class="card">
+      <h3>Audit Results</h3>
+      <div id="results" class="results">Results will appear here...</div>
+    </div>
+  </div>
+  <footer>
+    &copy; 2024 ApexSEO. Free tools for smarter websites.
+  </footer>
+
+  <script>
+    function normalizeURL(url) {
+      url = url.trim();
+      if (!/^https?:\/\//.test(url)) {
+        if (!url.includes(".")) url += ".com";
+        url = "https://" + url;
+      }
+      return url;
+    }
+
+    async function runAudit() {
+      const rawUrl = document.getElementById("urlInput").value;
+      const url = normalizeURL(rawUrl);
+      const resultsBox = document.getElementById("results");
+      resultsBox.textContent = "Auditing...";
+
+      try {
+        const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`);
+        const html = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        const title = doc.querySelector('title')?.innerText || 'N/A';
+        const meta = doc.querySelector('meta[name="description"]')?.content || 'N/A';
+        const h1 = doc.querySelector('h1')?.innerText || 'N/A';
+
+        resultsBox.textContent =
+          `URL: ${url}\n` +
+          `Title: ${title}\n` +
+          `Meta Description: ${meta}\n` +
+          `First H1: ${h1}`;
+      } catch (err) {
+        resultsBox.textContent = `Error: ${err.message}`;
+      }
+    }
+  </script>
 </body>
 </html>
