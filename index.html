@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ApexSEO – Free SEO Audit Tool</title>
-  <meta name="description" content="Free, fast SEO audit tool by ApexSEO. Check title, meta, H1, images, keywords, and performance instantly.">
+  <title>FreeSEO – Free SEO Audit Tool</title>
+  <meta name="description" content="Free, fast SEO audit tool by FreeSEO. Check title, meta, H1-H6 tags, images, keywords, and performance instantly.">
   <style>
     body { font-family: Arial, sans-serif; background: #f9fafb; color: #111; margin: 0; padding: 0; }
     header { background: #4f46e5; color: white; padding: 1rem 2rem; font-size: 1.5rem; font-weight: bold; }
@@ -15,14 +15,15 @@
     button:hover { background: #4338ca; }
     .results { white-space: pre-wrap; background: #f3f4f6; padding: 1rem; border-radius: 5px; }
     footer { text-align: center; font-size: 0.9rem; color: #666; padding: 2rem 0; }
+    .section { border-top: 1px solid #ddd; margin-top: 1rem; padding-top: 1rem; }
   </style>
 </head>
 <body>
-  <header>ApexSEO</header>
+  <header>FreeSEO</header>
   <div class="container">
     <div class="card">
       <h2>SEO Audit Tool</h2>
-      <p>Enter a website URL below to analyze title, meta description, H1 tag, and more.</p>
+      <p>Enter a website URL below to analyze title, meta description, H1-H6 tags, and more.</p>
       <input type="text" id="urlInput" placeholder="e.g. wikipedia.org">
       <button onclick="runAudit()">Run Audit</button>
     </div>
@@ -33,7 +34,7 @@
     </div>
   </div>
   <footer>
-    &copy; 2024 ApexSEO. Free tools for smarter websites.
+    &copy; 2024 FreeSEO. Free tools for smarter websites.
   </footer>
 
   <script>
@@ -58,15 +59,20 @@
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
 
-        const title = doc.querySelector('title')?.innerText || 'N/A';
-        const meta = doc.querySelector('meta[name="description"]')?.content || 'N/A';
-        const h1 = doc.querySelector('h1')?.innerText || 'N/A';
+        const title = doc.querySelector('title')?.innerText || 'Not Found';
+        const meta = doc.querySelector('meta[name="description"]')?.content || 'Not Found';
+        const tags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+        const tagResults = tags.map(tag => {
+          const elements = Array.from(doc.querySelectorAll(tag));
+          return elements.length > 0 ? `${tag.toUpperCase()} tags:\n- ` + elements.map(el => el.innerText).join('\n- ') : `${tag.toUpperCase()} tags: Not Found`;
+        }).join('\n\n');
 
         resultsBox.textContent =
-          `URL: ${url}\n` +
-          `Title: ${title}\n` +
-          `Meta Description: ${meta}\n` +
-          `First H1: ${h1}`;
+          `===== URL =====\n${url}\n\n` +
+          `===== Title =====\n${title}\n\n` +
+          `===== Meta Description =====\n${meta}\n\n` +
+          `===== Headings =====\n${tagResults}`;
+
       } catch (err) {
         resultsBox.textContent = `Error: ${err.message}`;
       }
