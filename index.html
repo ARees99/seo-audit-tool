@@ -1,20 +1,37 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SEO Audit Tool</title>
+  <title>ApexSEO – Free SEO Audit Tool</title>
+  <meta name="description" content="ApexSEO is a fast, accurate website SEO audit tool. Instantly analyze on-page SEO, keywords, headings, content density, images, and performance.">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Inter', sans-serif;
       margin: 0; padding: 0;
-      background: #f9fafb;
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at top, #f0f4ff, #e0e7ff);
       color: #111;
     }
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 999;
+      background: rgba(255, 255, 255, 0.95);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+      backdrop-filter: blur(10px);
+    }
+    .navbar .logo {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #4f46e5;
+    }
     .container {
-      max-width: 800px;
+      max-width: 900px;
       margin: auto;
       padding: 2rem;
     }
@@ -66,12 +83,19 @@
   </style>
 </head>
 <body>
+  <div class="navbar">
+    <div class="logo">ApexSEO</div>
+    <div class="nav-links">
+      <!-- Future nav: Features | Blog | Contact -->
+    </div>
+  </div>
+
   <div class="container">
-    <h1>SEO Audit Tool</h1>
+    <h1>Free SEO Audit Tool</h1>
 
     <div class="card">
       <label for="urlInput">Enter a URL to audit:</label>
-      <input type="text" id="urlInput" placeholder="https://example.com">
+      <input type="text" id="urlInput" placeholder="e.g. wikipedia or openai.com">
       <button onclick="runAudit()">Run SEO Audit</button>
     </div>
 
@@ -82,8 +106,19 @@
   </div>
 
   <script>
+    function normalizeURL(input) {
+      if (!input.startsWith("http")) {
+        if (!input.includes(".")) {
+          return "https://" + input + ".org";
+        }
+        return "https://" + input;
+      }
+      return input;
+    }
+
     async function runAudit() {
-      const url = document.getElementById("urlInput").value.trim();
+      const raw = document.getElementById("urlInput").value.trim();
+      const url = normalizeURL(raw);
       const resultsBox = document.getElementById("results");
       const resultsCard = document.getElementById("resultsCard");
 
