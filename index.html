@@ -3,27 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FreeSEO Audit Tool</title>
+  <title>FreeSEO Audit</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 text-gray-800">
-  <header class="bg-gray-900 text-white p-4 text-xl font-semibold">
-    FreeSEO Audit Tool
-  </header>
+  <div class="max-w-3xl mx-auto p-6">
+    <h1 class="text-2xl font-bold mb-4">Enter Website URL</h1>
+    <form id="urlForm" class="flex gap-4 mb-6">
+      <input
+        type="text"
+        id="urlInput"
+        placeholder="example.com"
+        class="flex-grow p-2 border rounded-md"
+        required
+      />
+      <button
+        type="submit"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+      >
+        Audit
+      </button>
+    </form>
 
-  <main class="max-w-4xl mx-auto p-6 space-y-6">
-    <!-- Search bar -->
-    <div class="bg-white p-6 rounded-lg shadow">
-      <h2 class="text-lg font-semibold mb-4">Enter Website URL</h2>
-      <form id="urlForm" class="flex gap-4">
-        <input type="text" id="urlInput" placeholder="e.g. bbc" class="flex-1 border border-gray-300 rounded px-4 py-2" />
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Audit</button>
-      </form>
-    </div>
-
-    <!-- Results area -->
-    <div id="results"></div>
-  </main>
+    <div id="results" class="space-y-6"></div>
+  </div>
 
   <script>
     const icons = { pass: "✅", fail: "❌", warn: "⚠️" };
@@ -31,12 +34,19 @@
 
     function normalizeUrl(input) {
       let url = input.trim();
-      if (!url.match(/^https?:\/\//)) {
-        url = 'https://' + url;
+
+      // Add https:// if missing
+      if (!/^https?:\/\//i.test(url)) {
+        url = "https://" + url;
       }
-      if (!url.match(/\.[a-z]{2,}$/)) {
-        url += '.com';
+
+      // If missing domain extension, add .com
+      const domainPattern = /^(https?:\/\/)?([\w.-]+)\.[a-z]{2,}(\/.*)?$/i;
+      if (!domainPattern.test(url)) {
+        url = url.replace(/^https?:\/\//, "") + ".com";
+        url = "https://" + url;
       }
+
       return url;
     }
 
@@ -81,7 +91,7 @@
         }
       } catch (err) {
         console.error(err);
-        results.innerHTML += `<p class="text-red-600 mt-4">Failed to fetch audit results. Is your backend running?</p>`;
+        results.innerHTML += `<p class="text-red-600 mt-4">Error: Failed to fetch or parse the website.</p>`;
       }
     });
   </script>
