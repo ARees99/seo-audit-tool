@@ -1,93 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FreeSEO – Free SEO Audit Tool</title>
-  <meta name="description" content="Free, fast SEO audit tool by FreeSEO. Check title, meta, H1-H6 tags, images, keywords, and performance instantly.">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FreeSEO Audit Results</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f9fafb; color: #111; margin: 0; padding: 0; }
-    header { background: #4f46e5; color: white; padding: 1rem 2rem; font-size: 1.5rem; font-weight: bold; }
-    .container { max-width: 900px; margin: auto; padding: 2rem; }
-    .card { background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem; }
-    input[type=text] { width: 100%; padding: 0.75rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 5px; }
-    button { padding: 0.75rem 1.25rem; background: #4f46e5; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    button:hover { background: #4338ca; }
-    .results { background: #f3f4f6; padding: 1rem; border-radius: 5px; }
-    .results h4 { margin-top: 1rem; border-bottom: 1px solid #ccc; padding-bottom: 0.25rem; color: #4f46e5; }
-    .results p, .results ul { margin: 0.5rem 0 1rem; }
-    .results ul { padding-left: 1.2rem; }
-    footer { text-align: center; font-size: 0.9rem; color: #666; padding: 2rem 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    header {
+      background-color: #1e1e2f;
+      color: white;
+      padding: 1rem 2rem;
+      font-size: 1.5rem;
+    }
+    .container {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 1rem;
+    }
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .card h2 {
+      margin-top: 0;
+      font-size: 1.3rem;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 0.5rem;
+    }
+    .check {
+      margin: 0.5rem 0;
+      padding-left: 1rem;
+    }
+    .pass::before {
+      content: '✅';
+      margin-right: 0.5rem;
+      color: green;
+    }
+    .fail::before {
+      content: '❌';
+      margin-right: 0.5rem;
+      color: red;
+    }
+    .warn::before {
+      content: '⚠️';
+      margin-right: 0.5rem;
+      color: orange;
+    }
   </style>
 </head>
 <body>
-  <header>FreeSEO</header>
+  <header>FreeSEO Audit Results</header>
   <div class="container">
     <div class="card">
-      <h2>SEO Audit Tool</h2>
-      <p>Enter a website URL below to analyze title, meta description, H1-H6 tags, and more.</p>
-      <input type="text" id="urlInput" placeholder="e.g. wikipedia.org">
-      <button onclick="runAudit()">Run Audit</button>
+      <h2>🧱 Coding Fundamentals</h2>
+      <p class="fail check">Missing &lt;h1&gt; tag</p>
+      <p class="warn check">Found &lt;h3&gt; before any &lt;h2&gt;</p>
+      <p class="pass check">Semantic heading structure mostly followed</p>
+      <p class="pass check">No use of &lt;div&gt; or &lt;p&gt; as headings</p>
     </div>
 
     <div class="card">
-      <h3>Audit Results</h3>
-      <div id="results" class="results">
-        <p>Results will appear here...</p>
-      </div>
+      <h2>🔠 Heading Structure</h2>
+      <p class="fail check">More than one &lt;h1&gt; found</p>
+      <p class="pass check">Proper use of &lt;h2&gt; and &lt;h3&gt;</p>
+    </div>
+
+    <div class="card">
+      <h2>🖼️ Image Audit</h2>
+      <p class="fail check">Missing alt tags on 3 images</p>
+      <p class="warn check">Non-descriptive file name: img123.png</p>
+      <p class="pass check">All other images optimized and accessible</p>
+    </div>
+
+    <div class="card">
+      <h2>🔍 Keyword Usage</h2>
+      <p class="pass check">Primary keyword found in title and H1</p>
+      <p class="warn check">Keyword density slightly low (0.8%)</p>
+    </div>
+
+    <div class="card">
+      <h2>⚙️ PageSpeed & Technical</h2>
+      <p class="warn check">Mobile speed score: 68/100</p>
+      <p class="pass check">Desktop speed score: 91/100</p>
     </div>
   </div>
-  <footer>
-    &copy; 2024 FreeSEO. Free tools for smarter websites.
-  </footer>
-
-  <script>
-    function normalizeURL(url) {
-      url = url.trim();
-      if (!/^https?:\/\//.test(url)) {
-        if (!url.includes(".")) url += ".com";
-        url = "https://" + url;
-      }
-      return url;
-    }
-
-    async function runAudit() {
-      const rawUrl = document.getElementById("urlInput").value;
-      const url = normalizeURL(rawUrl);
-      const resultsBox = document.getElementById("results");
-      resultsBox.innerHTML = "<p>Auditing...</p>";
-
-      try {
-        const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`);
-        const html = await res.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-
-        const title = doc.querySelector('title')?.innerText || 'Not Found';
-        const meta = doc.querySelector('meta[name="description"]')?.content || 'Not Found';
-        const tags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
-
-        let tagSections = '';
-        tags.forEach(tag => {
-          const elements = Array.from(doc.querySelectorAll(tag));
-          if (elements.length > 0) {
-            tagSections += `<h4>${tag.toUpperCase()} Tags</h4><ul>` +
-              elements.map(el => `<li>${el.innerText}</li>`).join('') + '</ul>';
-          } else {
-            tagSections += `<h4>${tag.toUpperCase()} Tags</h4><p>Not Found</p>`;
-          }
-        });
-
-        resultsBox.innerHTML =
-          `<h4>URL</h4><p>${url}</p>` +
-          `<h4>Title</h4><p>${title}</p>` +
-          `<h4>Meta Description</h4><p>${meta}</p>` +
-          tagSections;
-
-      } catch (err) {
-        resultsBox.innerHTML = `<p style='color:red;'>Error: ${err.message}</p>`;
-      }
-    }
-  </script>
 </body>
 </html>
