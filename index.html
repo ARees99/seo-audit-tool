@@ -3,60 +3,96 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FreeSEO Audit Results</title>
+  <title>FreeSEO Audit Tool</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 text-gray-800">
   <header class="bg-gray-900 text-white p-4 text-xl font-semibold">
-    FreeSEO Audit Results
+    FreeSEO Audit Tool
   </header>
 
-  <main id="results" class="max-w-4xl mx-auto p-6 space-y-6">
-    <!-- Dynamic audit results will go here -->
+  <main class="max-w-4xl mx-auto p-6 space-y-6">
+    <!-- Search bar -->
+    <div class="bg-white p-6 rounded-lg shadow">
+      <h2 class="text-lg font-semibold mb-4">Enter Website URL</h2>
+      <form id="urlForm" class="flex gap-4">
+        <input type="text" id="urlInput" placeholder="e.g. example.com" class="flex-1 border border-gray-300 rounded px-4 py-2" />
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Audit</button>
+      </form>
+    </div>
+
+    <!-- Results area -->
+    <div id="results"></div>
   </main>
 
   <script>
-    const auditData = {
+    const icons = { pass: "✅", fail: "❌", warn: "⚠️" };
+    const colors = { pass: "text-green-600", fail: "text-red-600", warn: "text-yellow-600" };
+
+    const simulatedAudit = {
       "Coding Fundamentals": [
         { text: "Missing <h1> tag", status: "fail" },
         { text: "Found <h3> before any <h2>", status: "warn" },
         { text: "Semantic heading structure mostly followed", status: "pass" },
         { text: "No use of <div> or <p> as headings", status: "pass" }
+      ],
+      "Heading Structure": [
+        { text: "More than one <h1> found", status: "fail" },
+        { text: "Proper use of <h2> and <h3>", status: "pass" }
+      ],
+      "Image Audit": [
+        { text: "Missing alt tags on 3 images", status: "fail" },
+        { text: "Non-descriptive file name: img123.png", status: "warn" },
+        { text: "All other images optimized and accessible", status: "pass" }
+      ],
+      "Keyword Usage": [
+        { text: "Primary keyword found in title and H1", status: "pass" },
+        { text: "Keyword density slightly low (0.8%)", status: "warn" }
+      ],
+      "PageSpeed & Technical": [
+        { text: "Mobile speed score: 68/100", status: "warn" },
+        { text: "Desktop speed score: 91/100", status: "pass" }
       ]
     };
 
-    const icons = {
-      pass: "✅",
-      fail: "❌",
-      warn: "⚠️"
-    };
+    document.getElementById("urlForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const urlInput = document.getElementById("urlInput").value.trim();
+      const results = document.getElementById("results");
+      results.innerHTML = "";
 
-    const colors = {
-      pass: "text-green-600",
-      fail: "text-red-600",
-      warn: "text-yellow-600"
-    };
+      if (!urlInput) {
+        alert("Please enter a valid URL.");
+        return;
+      }
 
-    const results = document.getElementById("results");
+      // Simulate normalized URL
+      const normalizedUrl = urlInput.startsWith("http") ? urlInput : `https://${urlInput}`;
 
-    for (const [sectionTitle, checks] of Object.entries(auditData)) {
-      const section = document.createElement("div");
-      section.className = "bg-white p-6 rounded-lg shadow";
+      const siteHeader = document.createElement("div");
+      siteHeader.className = "bg-white p-4 shadow rounded text-lg font-semibold";
+      siteHeader.textContent = `Audit results for: ${normalizedUrl}`;
+      results.appendChild(siteHeader);
 
-      const heading = document.createElement("h2");
-      heading.className = "text-lg font-semibold mb-4";
-      heading.textContent = sectionTitle;
-      section.appendChild(heading);
+      for (const [title, checks] of Object.entries(simulatedAudit)) {
+        const section = document.createElement("div");
+        section.className = "bg-white p-6 rounded-lg shadow mt-6";
 
-      checks.forEach(({ text, status }) => {
-        const p = document.createElement("p");
-        p.className = `flex items-center gap-2 mb-2 ${colors[status]}`;
-        p.innerHTML = `<span>${icons[status]}</span><span>${text}</span>`;
-        section.appendChild(p);
-      });
+        const heading = document.createElement("h2");
+        heading.className = "text-lg font-semibold mb-4";
+        heading.textContent = title;
+        section.appendChild(heading);
 
-      results.appendChild(section);
-    }
+        checks.forEach(({ text, status }) => {
+          const p = document.createElement("p");
+          p.className = `flex items-center gap-2 mb-2 ${colors[status]}`;
+          p.innerHTML = `<span>${icons[status]}</span><span>${text}</span>`;
+          section.appendChild(p);
+        });
+
+        results.appendChild(section);
+      }
+    });
   </script>
 </body>
 </html>
