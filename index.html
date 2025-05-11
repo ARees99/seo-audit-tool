@@ -8,14 +8,16 @@
   <style>
     body { font-family: Arial, sans-serif; background: #f9fafb; color: #111; margin: 0; padding: 0; }
     header { background: #4f46e5; color: white; padding: 1rem 2rem; font-size: 1.5rem; font-weight: bold; }
-    .container { max-width: 800px; margin: auto; padding: 2rem; }
+    .container { max-width: 900px; margin: auto; padding: 2rem; }
     .card { background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem; }
     input[type=text] { width: 100%; padding: 0.75rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 5px; }
     button { padding: 0.75rem 1.25rem; background: #4f46e5; color: white; border: none; border-radius: 5px; cursor: pointer; }
     button:hover { background: #4338ca; }
-    .results { white-space: pre-wrap; background: #f3f4f6; padding: 1rem; border-radius: 5px; }
+    .results { background: #f3f4f6; padding: 1rem; border-radius: 5px; }
+    .results h4 { margin-top: 1rem; border-bottom: 1px solid #ccc; padding-bottom: 0.25rem; color: #4f46e5; }
+    .results p, .results ul { margin: 0.5rem 0 1rem; }
+    .results ul { padding-left: 1.2rem; }
     footer { text-align: center; font-size: 0.9rem; color: #666; padding: 2rem 0; }
-    .section { border-top: 1px solid #ddd; margin-top: 1rem; padding-top: 1rem; }
   </style>
 </head>
 <body>
@@ -30,7 +32,9 @@
 
     <div class="card">
       <h3>Audit Results</h3>
-      <div id="results" class="results">Results will appear here...</div>
+      <div id="results" class="results">
+        <p>Results will appear here...</p>
+      </div>
     </div>
   </div>
   <footer>
@@ -51,7 +55,7 @@
       const rawUrl = document.getElementById("urlInput").value;
       const url = normalizeURL(rawUrl);
       const resultsBox = document.getElementById("results");
-      resultsBox.textContent = "Auditing...";
+      resultsBox.innerHTML = "<p>Auditing...</p>";
 
       try {
         const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`);
@@ -62,19 +66,26 @@
         const title = doc.querySelector('title')?.innerText || 'Not Found';
         const meta = doc.querySelector('meta[name="description"]')?.content || 'Not Found';
         const tags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
-        const tagResults = tags.map(tag => {
-          const elements = Array.from(doc.querySelectorAll(tag));
-          return elements.length > 0 ? `${tag.toUpperCase()} tags:\n- ` + elements.map(el => el.innerText).join('\n- ') : `${tag.toUpperCase()} tags: Not Found`;
-        }).join('\n\n');
 
-        resultsBox.textContent =
-          `===== URL =====\n${url}\n\n` +
-          `===== Title =====\n${title}\n\n` +
-          `===== Meta Description =====\n${meta}\n\n` +
-          `===== Headings =====\n${tagResults}`;
+        let tagSections = '';
+        tags.forEach(tag => {
+          const elements = Array.from(doc.querySelectorAll(tag));
+          if (elements.length > 0) {
+            tagSections += `<h4>${tag.toUpperCase()} Tags</h4><ul>` +
+              elements.map(el => `<li>${el.innerText}</li>`).join('') + '</ul>';
+          } else {
+            tagSections += `<h4>${tag.toUpperCase()} Tags</h4><p>Not Found</p>`;
+          }
+        });
+
+        resultsBox.innerHTML =
+          `<h4>URL</h4><p>${url}</p>` +
+          `<h4>Title</h4><p>${title}</p>` +
+          `<h4>Meta Description</h4><p>${meta}</p>` +
+          tagSections;
 
       } catch (err) {
-        resultsBox.textContent = `Error: ${err.message}`;
+        resultsBox.innerHTML = `<p style='color:red;'>Error: ${err.message}</p>`;
       }
     }
   </script>
