@@ -16,7 +16,7 @@
     <div class="bg-white p-6 rounded-lg shadow">
       <h2 class="text-lg font-semibold mb-4">Enter Website URL</h2>
       <form id="urlForm" class="flex gap-4">
-        <input type="text" id="urlInput" placeholder="e.g. example.com" class="flex-1 border border-gray-300 rounded px-4 py-2" />
+        <input type="text" id="urlInput" placeholder="e.g. bbc" class="flex-1 border border-gray-300 rounded px-4 py-2" />
         <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Audit</button>
       </form>
     </div>
@@ -24,61 +24,66 @@
     <!-- Results area -->
     <div id="results"></div>
   </main>
-<script>
-  const icons = { pass: "✅", fail: "❌", warn: "⚠️" };
-  const colors = { pass: "text-green-600", fail: "text-red-600", warn: "text-yellow-600" };
 
-  document.getElementById("urlForm").addEventListener("submit", async function (e) {
-    e.preventDefault();
-    const urlInput = document.getElementById("urlInput").value.trim();
-    const results = document.getElementById("results");
-    results.innerHTML = "";
+  <script>
+    const icons = { pass: "✅", fail: "❌", warn: "⚠️" };
+    const colors = { pass: "text-green-600", fail: "text-red-600", warn: "text-yellow-600" };
 
-    if (!urlInput) {
-      alert("Please enter a valid URL.");
-      return;
+    function normalizeUrl(input) {
+      let url = input.trim();
+      if (!url.match(/^https?:\/\//)) {
+        url = 'https://' + url;
+      }
+      if (!url.match(/\.[a-z]{2,}$/)) {
+        url += '.com';
+      }
+      return url;
     }
 
-    const normalizedUrl = urlInput.startsWith("http") ? urlInput : `https://${urlInput}`;
-    const siteHeader = document.createElement("div");
-    siteHeader.className = "bg-white p-4 shadow rounded text-lg font-semibold";
-    siteHeader.textContent = `Auditing: ${normalizedUrl}`;
-    results.appendChild(siteHeader);
+    document.getElementById("urlForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const rawInput = document.getElementById("urlInput").value;
+      const normalizedUrl = normalizeUrl(rawInput);
+      const results = document.getElementById("results");
+      results.innerHTML = "";
 
-    try {
-      const response = await fetch(`http://localhost:3000/audit?url=${encodeURIComponent(normalizedUrl)}`);
-      const data = await response.json();
+      const siteHeader = document.createElement("div");
+      siteHeader.className = "bg-white p-4 shadow rounded text-lg font-semibold";
+      siteHeader.textContent = `Auditing: ${normalizedUrl}`;
+      results.appendChild(siteHeader);
 
-      if (data.error) {
-        results.innerHTML += `<p class="text-red-600 mt-4">Error: ${data.error}</p>`;
-        return;
+      try {
+        const response = await fetch(`http://localhost:3000/audit?url=${encodeURIComponent(normalizedUrl)}`);
+        const data = await response.json();
+
+        if (data.error) {
+          results.innerHTML += `<p class="text-red-600 mt-4">Error: ${data.error}</p>`;
+          return;
+        }
+
+        for (const [title, checks] of Object.entries(data)) {
+          const section = document.createElement("div");
+          section.className = "bg-white p-6 rounded-lg shadow mt-6";
+
+          const heading = document.createElement("h2");
+          heading.className = "text-lg font-semibold mb-4";
+          heading.textContent = title;
+          section.appendChild(heading);
+
+          checks.forEach(({ text, status }) => {
+            const p = document.createElement("p");
+            p.className = `flex items-center gap-2 mb-2 ${colors[status]}`;
+            p.innerHTML = `<span>${icons[status]}</span><span>${text}</span>`;
+            section.appendChild(p);
+          });
+
+          results.appendChild(section);
+        }
+      } catch (err) {
+        console.error(err);
+        results.innerHTML += `<p class="text-red-600 mt-4">Failed to fetch audit results. Is your backend running?</p>`;
       }
-
-      for (const [title, checks] of Object.entries(data)) {
-        const section = document.createElement("div");
-        section.className = "bg-white p-6 rounded-lg shadow mt-6";
-
-        const heading = document.createElement("h2");
-        heading.className = "text-lg font-semibold mb-4";
-        heading.textContent = title;
-        section.appendChild(heading);
-
-        checks.forEach(({ text, status }) => {
-          const p = document.createElement("p");
-          p.className = `flex items-center gap-2 mb-2 ${colors[status]}`;
-          p.innerHTML = `<span>${icons[status]}</span><span>${text}</span>`;
-          section.appendChild(p);
-        });
-
-        results.appendChild(section);
-      }
-    } catch (err) {
-      console.error(err);
-      results.innerHTML += `<p class="text-red-600 mt-4">Failed to fetch audit results. Check your backend connection.</p>`;
-    }
-  });
-</script>
-
-
- </body>
+    });
+  </script>
+</body>
 </html>
