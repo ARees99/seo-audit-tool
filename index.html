@@ -24,57 +24,37 @@
     <!-- Results area -->
     <div id="results"></div>
   </main>
+<script>
+  const icons = { pass: "✅", fail: "❌", warn: "⚠️" };
+  const colors = { pass: "text-green-600", fail: "text-red-600", warn: "text-yellow-600" };
 
-  <script>
-    const icons = { pass: "✅", fail: "❌", warn: "⚠️" };
-    const colors = { pass: "text-green-600", fail: "text-red-600", warn: "text-yellow-600" };
+  document.getElementById("urlForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const urlInput = document.getElementById("urlInput").value.trim();
+    const results = document.getElementById("results");
+    results.innerHTML = "";
 
-    const simulatedAudit = {
-      "Coding Fundamentals": [
-        { text: "Missing <h1> tag", status: "fail" },
-        { text: "Found <h3> before any <h2>", status: "warn" },
-        { text: "Semantic heading structure mostly followed", status: "pass" },
-        { text: "No use of <div> or <p> as headings", status: "pass" }
-      ],
-      "Heading Structure": [
-        { text: "More than one <h1> found", status: "fail" },
-        { text: "Proper use of <h2> and <h3>", status: "pass" }
-      ],
-      "Image Audit": [
-        { text: "Missing alt tags on 3 images", status: "fail" },
-        { text: "Non-descriptive file name: img123.png", status: "warn" },
-        { text: "All other images optimized and accessible", status: "pass" }
-      ],
-      "Keyword Usage": [
-        { text: "Primary keyword found in title and H1", status: "pass" },
-        { text: "Keyword density slightly low (0.8%)", status: "warn" }
-      ],
-      "PageSpeed & Technical": [
-        { text: "Mobile speed score: 68/100", status: "warn" },
-        { text: "Desktop speed score: 91/100", status: "pass" }
-      ]
-    };
+    if (!urlInput) {
+      alert("Please enter a valid URL.");
+      return;
+    }
 
-    document.getElementById("urlForm").addEventListener("submit", function (e) {
-      e.preventDefault();
-      const urlInput = document.getElementById("urlInput").value.trim();
-      const results = document.getElementById("results");
-      results.innerHTML = "";
+    const normalizedUrl = urlInput.startsWith("http") ? urlInput : `https://${urlInput}`;
+    const siteHeader = document.createElement("div");
+    siteHeader.className = "bg-white p-4 shadow rounded text-lg font-semibold";
+    siteHeader.textContent = `Auditing: ${normalizedUrl}`;
+    results.appendChild(siteHeader);
 
-      if (!urlInput) {
-        alert("Please enter a valid URL.");
+    try {
+      const response = await fetch(`http://localhost:3000/audit?url=${encodeURIComponent(normalizedUrl)}`);
+      const data = await response.json();
+
+      if (data.error) {
+        results.innerHTML += `<p class="text-red-600 mt-4">Error: ${data.error}</p>`;
         return;
       }
 
-      // Simulate normalized URL
-      const normalizedUrl = urlInput.startsWith("http") ? urlInput : `https://${urlInput}`;
-
-      const siteHeader = document.createElement("div");
-      siteHeader.className = "bg-white p-4 shadow rounded text-lg font-semibold";
-      siteHeader.textContent = `Audit results for: ${normalizedUrl}`;
-      results.appendChild(siteHeader);
-
-      for (const [title, checks] of Object.entries(simulatedAudit)) {
+      for (const [title, checks] of Object.entries(data)) {
         const section = document.createElement("div");
         section.className = "bg-white p-6 rounded-lg shadow mt-6";
 
@@ -92,7 +72,13 @@
 
         results.appendChild(section);
       }
-    });
-  </script>
-</body>
+    } catch (err) {
+      console.error(err);
+      results.innerHTML += `<p class="text-red-600 mt-4">Failed to fetch audit results. Check your backend connection.</p>`;
+    }
+  });
+</script>
+
+
+ </body>
 </html>
