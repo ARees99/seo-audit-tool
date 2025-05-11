@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="light">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -25,7 +25,8 @@
 </head>
 <body class="text-gray-800 dark:text-gray-100 dark:bg-slate-900 transition-colors duration-500" onload="AOS.init(); initTheme();">
   <!-- Navigation bar -->
-  <nav class="bg-white dark:bg-slate-800 shadow-md px-4 py-3 flex items-center justify-between flex-wrap sticky top-0 z-50">
+  <div class="bg-yellow-100 dark:bg-yellow-900 text-yellow-900 dark:text-yellow-100 text-xs px-3 py-1 font-semibold rounded-full absolute left-4 top-4 z-50">100% Free, No Signup</div>
+$1bg-white dark:bg-slate-800 shadow-md px-4 py-3 flex items-center justify-between flex-wrap sticky top-0 z-50">
     <div class="flex items-center flex-shrink-0 text-gray-800 dark:text-white mr-6">
       <img src="logo.png" alt="FreeSEO Logo" class="w-8 h-8 mr-2" />
       <span class="font-bold text-xl tracking-tight">FreeSEO</span>
@@ -61,7 +62,7 @@
 
     <!-- Search Section -->
     <section id="search" class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow" data-aos="fade-up">
-      <h2 class="text-lg font-semibold mb-4">Try FreeSEO Now</h2>
+      <h2 class="text-lg font-semibold mb-1">$1</h2><p class="text-sm text-gray-500 dark:text-gray-400 mb-3">Section audit: checks HTML usage, tag order, and best practices</p>
       <form id="urlForm" class="flex gap-4 flex-col sm:flex-row text-gray-800 dark:text-white">
         <input type="text" id="urlInput" placeholder="e.g. bbc" class="flex-1 border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-white rounded px-4 py-2" />
         <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Audit</button>
@@ -139,7 +140,7 @@
   }
 
   function initTheme() {
-    const theme = localStorage.getItem("theme") || "light";
+    const theme = localStorage.getItem("theme") || "dark"; // default to dark
     document.documentElement.classList.toggle("dark", theme === "dark");
     updateToggleButton(theme);
   }
@@ -171,12 +172,13 @@
       const response = await fetch(`http://localhost:3000/audit?url=${encodeURIComponent(normalizedUrl)}`);
       const data = await response.json();
 
-      // 🎯 Lighthouse-style scores panel
+      // 🚦 Score Panel
       if (data.scores) {
         const scoreBlock = document.createElement("div");
         scoreBlock.className = "bg-white dark:bg-slate-800 p-6 rounded-lg shadow mt-6 text-center text-gray-800 dark:text-white";
         scoreBlock.innerHTML = `
-          <h2 class="text-lg font-semibold mb-4">Site Scores</h2>
+          <h2 class="text-lg font-semibold mb-1">Site Scores</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">SEO, Accessibility, and Structure health</p>
           <div class="flex justify-center gap-6">
             ${Object.entries(data.scores).map(([key, value]) => {
               const color = value >= 90 ? 'text-green-600' : value >= 60 ? 'text-yellow-500' : 'text-red-600';
@@ -196,9 +198,14 @@
         section.className = "bg-white dark:bg-slate-800 p-6 rounded-lg shadow mt-6 text-gray-800 dark:text-white";
 
         const heading = document.createElement("h2");
-        heading.className = "text-lg font-semibold mb-4";
+        heading.className = "text-lg font-semibold mb-1";
         heading.textContent = title;
         section.appendChild(heading);
+
+        const desc = document.createElement("p");
+        desc.className = "text-sm text-gray-500 dark:text-gray-400 mb-3";
+        desc.textContent = `Section audit: checks HTML usage, tag order, and best practices`;
+        section.appendChild(desc);
 
         checks.forEach(({ text, status, links }) => {
           const p = document.createElement("div");
@@ -252,7 +259,7 @@
     return url;
   }
 
-  // 🌟 Testimonial carousel logic
+  // 💬 Testimonial Carousel
   const testimonials = [
     { text: "“FreeSEO helped me catch SEO issues I didn’t even know existed.”", author: "— Alex, Web Developer" },
     { text: "“I use FreeSEO before launching any new site. It's like a second pair of eyes.”", author: "— Jamie, SEO Specialist" },
