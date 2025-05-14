@@ -250,22 +250,31 @@ let latestAuditData = null;
 document.getElementById('urlForm').addEventListener('submit', async function (e) {
   e.preventDefault();
   const urlInput = document.getElementById('urlInput');
-  let url = urlInput.value.trim();
+  let raw = urlInput.value.trim();
 
-  if (!url) return alert('Please enter a website URL.');
-  if (!url.startsWith('http')) url = 'https://' + url;
+  if (!raw) return alert('Please enter a website URL.');
+
+  // Normalize input
+  let url = raw;
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  if (!/\.[a-z]{2,}$/i.test(url)) url += '.com'; // Add .com if missing
+  if (!/^https?:\/\/www\./i.test(url)) url = url.replace(/^https?:\/\//, 'https://www.');
 
   const resultsSection = document.getElementById('results');
-  resultsSection.innerHTML = '<p class="text-center py-4 text-gray-400">Auditing <strong>' + url + '</strong>... please wait.</p>';
+  resultsSection.innerHTML = `<p class="text-center py-4 text-gray-400">Auditing <strong>${url}</strong>... please wait.</p>`;
 
   try {
+    // Simulate realistic data
     const data = {
       url: url,
-      h1Count: 1,
-      missingAlt: 3,
-      missingMetaDescription: true,
-      pageSpeedScore: 83,
-      htmlStructureIssues: ["No H1 tag", "Nested <div> used as heading"]
+      h1Count: Math.floor(Math.random() * 3),
+      missingAlt: Math.floor(Math.random() * 10),
+      missingMetaDescription: Math.random() > 0.5,
+      pageSpeedScore: Math.floor(50 + Math.random() * 50),
+      titleTagPresent: Math.random() > 0.2,
+      metaDescriptionLength: Math.floor(80 + Math.random() * 120),
+      titleTagLength: Math.floor(30 + Math.random() * 60),
+      htmlStructureIssues: Math.random() > 0.4 ? ["Nested <div> used as heading"] : []
     };
 
     latestAuditData = data;
@@ -273,39 +282,39 @@ document.getElementById('urlForm').addEventListener('submit', async function (e)
 
     const contentScore = data.missingMetaDescription ? 60 : 90;
     const accessibilityScore = data.missingAlt > 2 ? 65 : 90;
-    const structureScore = data.htmlStructureIssues.length > 0 ? 60 : 90;
+    const structureScore = data.htmlStructureIssues.length > 0 || data.h1Count !== 1 ? 60 : 90;
 
+    // Render scores
     resultsSection.innerHTML = `
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        ${renderScorePanel('Content & Tags', contentScore, 'Checks for meta tags, H1, title', '📝')}
-        ${renderScorePanel('Accessibility', accessibilityScore, 'Images with alt text, proper labels', '♿')}
-        ${renderScorePanel('Speed', data.pageSpeedScore, 'Page load performance (PageSpeed)', '⚡')}
-        ${renderScorePanel('Structure', structureScore, 'Semantic HTML and heading usage', '📐')}
+        ${renderScorePanel('Content & Tags', contentScore, 'Meta tags, H1, title tag', '📝')}
+        ${renderScorePanel('Accessibility', accessibilityScore, 'Alt text coverage', '♿')}
+        ${renderScorePanel('Speed', data.pageSpeedScore, 'Performance', '⚡')}
+        ${renderScorePanel('Structure', structureScore, 'HTML semantics', '📐')}
       </div>
-      <div class="mt-6 bg-white dark:bg-slate-800 p-6 rounded shadow">
-        <h2 class="text-xl font-bold mb-4">SEO Audit Results for <span class="text-blue-500">${url}</span></h2>
-        <ul class="space-y-2 text-sm">
-          <li><strong>H1 Tags Found:</strong> ${data.h1Count}</li>
-          <li><strong>Images Missing Alt Text:</strong> ${data.missingAlt}</li>
-          <li><strong>Meta Description Missing:</strong> ${data.missingMetaDescription ? 'Yes' : 'No'}</li>
-          <li><strong>Page Speed Score:</strong> ${data.pageSpeedScore}/100</li>
-          <li><strong>HTML Structure Issues:</strong>
-            <ul class="list-disc ml-5 text-red-400">
+
+      <div class="bg-white dark:bg-slate-800 p-6 rounded shadow mt-6">
+        <h2 class="text-xl font-bold mb-4">SEO Audit Results for <span class="text-blue-500 break-words">${url}</span></h2>
+        <div class="grid sm:grid-cols-2 gap-6 text-sm">
+          <div>
+            <p><strong>H1 Tags Found:</strong> ${data.h1Count}</p>
+            <p><strong>Meta Description Missing:</strong> ${data.missingMetaDescription ? 'Yes' : 'No'}</p>
+            <p><strong>Images Missing Alt Text:</strong> ${data.missingAlt}</p>
+          </div>
+          <div>
+            <p><strong>Page Speed Score:</strong> ${data.pageSpeedScore}/100</p>
+            <p><strong>HTML Issues:</strong></p>
+            <ul class="list-disc ml-5 text-red-400 mt-1">
+              ${data.h1Count === 0 ? '<li>No &lt;h1&gt; tag found</li>' : ''}
+              ${data.h1Count > 1 ? `<li>Multiple &lt;h1&gt; tags (${data.h1Count})</li>` : ''}
               ${data.htmlStructureIssues.map(issue => `<li>${issue}</li>`).join('')}
             </ul>
-          </li>
-        </ul>
-        <div class="mt-4 flex flex-wrap gap-2">
+          </div>
+        </div>
+
+        <div class="mt-6 flex flex-wrap gap-3">
           <button onclick="exportPDF()" class="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Export PDF</button>
           <button onclick="exportCSV()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Export CSV</button>
-        </div>
-        <div class="mt-6">
-          <label for="emailInput" class="block text-sm font-semibold mb-1">Send Report via Email</label>
-          <div class="flex flex-col sm:flex-row gap-2">
-            <input type="email" id="emailInput" placeholder="you@example.com" class="flex-1 px-4 py-2 rounded border dark:border-slate-600 bg-white text-black" />
-            <button onclick="sendReportByEmail()" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Send Report</button>
-          </div>
-          <p id="emailSuccess" class="text-green-500 text-sm mt-2 hidden">✅ Report sent successfully!</p>
         </div>
       </div>
     `;
@@ -314,6 +323,7 @@ document.getElementById('urlForm').addEventListener('submit', async function (e)
     console.error(err);
   }
 });
+
 
 function exportPDF() {
   if (!latestAuditData) return alert('No data to export.');
