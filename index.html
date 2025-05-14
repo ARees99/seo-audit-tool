@@ -1,23 +1,44 @@
-
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FreeSEO Audit Tool</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet"/>
 </head>
-<body class="dark:bg-slate-900 text-white" onload="AOS.init();">
-  <nav class="bg-slate-800 px-4 py-3 flex items-center justify-between">
-    <div class="flex items-center space-x-2">
-      <img src="logo.png" alt="FreeSEO Logo" class="h-10 w-auto max-h-12 object-contain mr-2" />
-      <span class="text-xl font-bold text-white">FreeSEO</span>
+<body class="bg-white text-gray-900 dark:bg-slate-900 dark:text-white">
+  <nav class="bg-white dark:bg-slate-800 shadow px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <img src="logo.png" class="h-10 w-auto" alt="Logo"/>
+      <span class="text-2xl font-bold">FreeSEO</span>
     </div>
-    <button id="themeToggle" class="text-sm border px-3 py-1 rounded text-white border-gray-600 hover:bg-slate-700">
-      🌙 Dark Mode
-    </button>
   </nav>
+  <main class="max-w-4xl mx-auto p-6 space-y-8">
+    <section class="text-center" data-aos="fade-in">
+      <h1 class="text-4xl font-bold">Audit Any Website</h1>
+      <p class="text-gray-600 dark:text-gray-300 mt-2">Enter a URL to check SEO structure and accessibility.</p>
+      <form id="urlForm" class="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
+        <input id="urlInput" name="url" type="text" placeholder="https://example.com" class="border px-4 py-2 rounded w-full sm:w-96"/>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Audit</button>
+      </form>
+      <div id="result" class="mt-6"></div>
+    </section>
+  </main>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script>
+    AOS.init();
+    document.getElementById('urlForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const url = document.getElementById('urlInput').value;
+      const res = await fetch('/api/audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      const data = await res.json();
+      document.getElementById('result').innerText = JSON.stringify(data, null, 2);
+    });
+  </script>
 </body>
 </html>
