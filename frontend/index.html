@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FreeSEO Audit Tool</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet"/>
+  <style>
+    body {
+      background: linear-gradient(135deg, #c3e5f5, #f8f9fa);
+      background-size: 400% 400%;
+      animation: gradientMove 15s ease infinite;
+    }
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+  </style>
+</head>
+<body class="dark:bg-slate-900 dark:text-white transition-colors" onload="AOS.init();">
+
+  <nav class="bg-white dark:bg-slate-800 px-4 py-3 shadow-md flex justify-between items-center">
+    <div class="flex items-center space-x-2">
+      <img src="logo.png" class="h-10 w-auto object-contain" alt="FreeSEO Logo" />
+      <span class="text-xl font-bold text-gray-800 dark:text-white">FreeSEO</span>
+    </div>
+  </nav>
+
+  <main class="max-w-4xl mx-auto p-6 space-y-6">
+    <section class="text-center py-16" data-aos="fade-in">
+      <h1 class="text-4xl font-bold mb-4">Audit Any Website Instantly</h1>
+      <form id="urlForm" class="mt-4 flex gap-4 justify-center">
+        <input type="text" id="urlInput" placeholder="https://example.com" class="px-4 py-2 border rounded w-full max-w-md"/>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Audit</button>
+      </form>
+    </section>
+
+    <section id="results" data-aos="fade-up" class="bg-white dark:bg-slate-800 p-6 rounded shadow hidden"></section>
+
+    <section class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow" id="testimonials" data-aos="fade-up">
+      <h2 class="text-lg font-semibold mb-6 text-center">What People Say</h2>
+      <div class="text-center">
+        <p class="text-gray-700 dark:text-gray-300 italic">“FreeSEO helped me catch SEO issues I didn’t even know existed.”</p>
+        <p class="text-blue-600 dark:text-blue-400 mt-2">— Alex, Web Developer</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    document.getElementById('urlForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const url = document.getElementById('urlInput').value.trim();
+      const results = document.getElementById('results');
+      if (!url) return alert("Enter a URL");
+
+      results.classList.remove("hidden");
+      results.innerHTML = `<p class="text-center">Auditing <strong>${url}</strong>...</p>`;
+
+      try {
+        const res = await fetch('http://localhost:3000/api/audit?url=' + encodeURIComponent(url));
+        const data = await res.json();
+        results.innerHTML = `
+          <h2 class="text-xl font-bold mb-2">Results for ${url}</h2>
+          <ul class="list-disc ml-6">
+            <li>H1 Count: ${data.h1Count}</li>
+            <li>Missing Alts: ${data.missingAlt}</li>
+            <li>Meta Description Present: ${data.metaDescriptionPresent}</li>
+          </ul>`;
+      } catch (err) {
+        results.innerHTML = `<p class="text-red-600">Error retrieving audit data.</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
