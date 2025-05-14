@@ -153,7 +153,6 @@
         <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200">📝 Content</h4>
         <button onclick="toggleWarnings('content')" class="text-xs text-blue-500 hover:underline">Hide</button>
       </div>
-      <ul id="warnings-content" class="list-disc ml-5 text-sm space-y-1">
         ${!data.titleTagPresent ? '<li class="text-red-600">❗ Missing &lt;title&gt; tag</li>' : ''}
         ${data.titleTagLength > 70 ? '<li class="text-yellow-600">⚠️ Title tag is too long (' + data.titleTagLength + ' characters)</li>' : ''}
         ${!data.metaDescriptionPresent ? '<li class="text-red-600">❗ Missing meta description</li>' : ''}
@@ -488,5 +487,6 @@ function exportWarningsCSV() {
 window.addEventListener('DOMContentLoaded', renderAuditDashboard);
 </script>
   <!-- The full working script is already built and ready in your saved updates -->
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 </body>
 </html>
