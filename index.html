@@ -324,6 +324,28 @@ document.getElementById('urlForm').addEventListener('submit', async function (e)
   }
 });
 
+<!-- Score Panel Container -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6" data-aos="fade-up">
+  ${renderScorePanel(...)}
+</div>
+
+<!-- Results Wrapper -->
+<div class="bg-white dark:bg-slate-800 p-6 rounded shadow mt-6" data-aos="fade-up">
+  <h2 class="text-xl font-bold mb-4">SEO Audit Results for <span class="text-blue-500">${url}</span></h2>
+  
+  <div class="grid sm:grid-cols-2 gap-6 text-sm" data-aos="fade-up" data-aos-delay="100">
+    ...
+  </div>
+
+  <div class="mt-6 flex flex-wrap gap-3" data-aos="fade-up" data-aos-delay="200">
+    ...
+  </div>
+</div>
+
+<section id="dashboard" data-aos="fade-up"></section>
+<section id="testimonials" data-aos="fade-up" data-aos-delay="100"></section>
+<section id="about" data-aos="fade-up" data-aos-delay="200"></section>
+
 
 function exportPDF() {
   if (!latestAuditData) return alert('No data to export.');
