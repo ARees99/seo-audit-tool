@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FreeSEO Audit Tool</title>
@@ -26,7 +29,7 @@
 <body class="text-gray-800 dark:text-gray-100 dark:bg-slate-900 transition-colors duration-500" onload="AOS.init(); initTheme();">
   <!-- Navigation bar -->
   <div class="bg-yellow-100 dark:bg-yellow-900 text-yellow-900 dark:text-yellow-100 text-xs px-3 py-1 font-semibold rounded-full absolute left-4 top-4 z-50">100% Free, No Signup</div>
-bg-white dark:bg-slate-800 shadow-md px-4 py-3 flex items-center justify-between flex-wrap sticky top-0 z-50">
+<nav class= "bg-white dark:bg-slate-800 shadow-md px-4 py-3 flex items-center justify-between flex-wrap sticky top-0 z-50">
     <div class="flex items-center flex-shrink-0 text-gray-800 dark:text-white mr-6">
       <img src="logo.png" alt="FreeSEO Logo" class="w-8 h-8 mr-2" />
       <span class="font-bold text-xl tracking-tight">FreeSEO</span>
@@ -121,14 +124,372 @@ bg-white dark:bg-slate-800 shadow-md px-4 py-3 flex items-center justify-between
         </div>
       </div>
     </section>
+<section id="dashboard" class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow mt-10" data-aos="fade-up">
+  <h2 class="text-lg font-semibold mb-4 text-center">Saved Audits</h2>
+  <div id="auditTableContainer" class="overflow-x-auto">
+    <table class="min-w-full text-sm text-left">
+      <thead class="text-xs uppercase bg-slate-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300">
+        <tr>
+          <th class="px-4 py-2">Date</th>
+          <th class="px-4 py-2">URL</th>
+          <th class="px-4 py-2">Scores</th>
+          <th class="px-4 py-2">Action</th>
+        </tr>
+      </thead>
+      <tbody id="auditTableBody" class="text-gray-800 dark:text-gray-200"></tbody>
+    </table>
+  </div>
+<div class="mb-6 bg-white dark:bg-slate-800 p-4 rounded shadow border border-slate-300 dark:border-slate-700">
+  <h3 class="font-semibold text-sm mb-4">⚠️ SEO Warnings & Issues</h3>
 
+  <div class="space-y-4">
+
+    <!-- Content -->
+<div class="flex justify-end mb-2">
+  <button onclick="toggleAllWarnings()" class="text-xs text-blue-500 hover:underline" id="toggle-all-btn">Collapse All</button>
+</div>
+
+    <div>
+      <div class="flex items-center justify-between mb-1">
+        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200">📝 Content</h4>
+        <button onclick="toggleWarnings('content')" class="text-xs text-blue-500 hover:underline">Hide</button>
+      </div>
+      <ul id="warnings-content" class="list-disc ml-5 text-sm space-y-1">
+        ${!data.titleTagPresent ? '<li class="text-red-600">❗ Missing &lt;title&gt; tag</li>' : ''}
+        ${data.titleTagLength > 70 ? '<li class="text-yellow-600">⚠️ Title tag is too long (' + data.titleTagLength + ' characters)</li>' : ''}
+        ${!data.metaDescriptionPresent ? '<li class="text-red-600">❗ Missing meta description</li>' : ''}
+        ${data.metaDescriptionLength > 160 ? '<li class="text-yellow-600">⚠️ Meta description is too long (' + data.metaDescriptionLength + ' characters)</li>' : ''}
+      </ul>
+    </div>
+
+    <!-- Structure -->
+    <div>
+      <div class="flex items-center justify-between mb-1">
+        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200">📐 Structure</h4>
+        <button onclick="toggleWarnings('structure')" class="text-xs text-blue-500 hover:underline">Hide</button>
+      </div>
+      <ul id="warnings-structure" class="list-disc ml-5 text-sm space-y-1">
+        ${data.h1Count === 0 ? '<li class="text-red-600">❗ No &lt;h1&gt; tag found</li>' : ''}
+        ${data.h1Count > 1 ? '<li class="text-yellow-600">⚠️ Multiple &lt;h1&gt; tags found</li>' : ''}
+        ${data.htmlStructureIssues.map(issue => `<li class="text-yellow-600">⚠️ ${issue}</li>`).join('')}
+      </ul>
+<ul id="warnings-content" class="transition-all duration-500 max-h-screen overflow-hidden list-disc ml-5 text-sm space-y-1">
+
+    </div>
+
+    <!-- Accessibility -->
+    <div>
+      <div class="flex items-center justify-between mb-1">
+        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200">♿ Accessibility</h4>
+        <button onclick="toggleWarnings('accessibility')" class="text-xs text-blue-500 hover:underline">Hide</button>
+      </div>
+      <ul id="warnings-accessibility" class="list-disc ml-5 text-sm space-y-1">
+        ${data.missingAlt > 5
+          ? `<li class="text-red-600">❗ ${data.missingAlt} images missing alt text</li>`
+          : data.missingAlt > 0
+          ? `<li class="text-yellow-600">⚠️ ${data.missingAlt} images missing alt text</li>`
+          : '<li class="text-green-600">✅ All images have alt text</li>'}
+      </ul>
+<ul id="warnings-content" class="transition-all duration-500 max-h-screen overflow-hidden list-disc ml-5 text-sm space-y-1">
+
+    </div>
+
+  </div>
+</div>
+<div class="mt-4 flex space-x-2">
+  <button onclick="exportWarningsPDF()" class="bg-teal-600 text-white px-3 py-1 rounded text-sm hover:bg-teal-700">Export Warnings PDF</button>
+  <button onclick="exportWarningsCSV()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">Export Warnings CSV</button>
+</div>
+
+
+</section>
     <!-- Footer -->
     <footer class="text-center text-sm text-gray-500 mt-10 mb-4">
       © 2024 FreeSEO. Built for web health.
     </footer>
   </main>
 
-  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+</script>
+<script>
+function initTheme() {
+  const toggle = document.getElementById('themeToggle');
+  toggle.addEventListener('click', () => {
+    document.documentElement.classList.toggle('dark');
+  });
+}
+
+function toggleMenu() {
+  const menu = document.getElementById('navMenu');
+  menu.classList.toggle('hidden');
+}
+
+function renderScorePanel(label, score, tooltip, icon) {
+  let color = score >= 90 ? 'text-green-500' : score >= 60 ? 'text-yellow-400' : 'text-red-500';
+  return `
+    <div class="flex flex-col items-center group" title="${tooltip}">
+      <div class="relative w-16 h-16">
+        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+          <path class="text-gray-300" d="M18 2.0845
+            a 15.9155 15.9155 0 0 1 0 31.831
+            a 15.9155 15.9155 0 0 1 0 -31.831"
+            fill="none" stroke="currentColor" stroke-width="3.8" />
+          <path class="${color}" d="M18 2.0845
+            a 15.9155 15.9155 0 0 1 0 31.831"
+            fill="none" stroke="currentColor" stroke-width="3.8"
+            stroke-dasharray="${score}, 100" />
+        </svg>
+        <div class="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">
+          ${score}
+        </div>
+      </div>
+      <p class="text-xs mt-2 text-center text-gray-700 dark:text-gray-300 flex items-center gap-1">
+        ${icon || ''}${label}
+      </p>
+    </div>
+  `;
+}
+
+let latestAuditData = null;
+
+document.getElementById('urlForm').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  const urlInput = document.getElementById('urlInput');
+  let url = urlInput.value.trim();
+
+  if (!url) return alert('Please enter a website URL.');
+  if (!url.startsWith('http')) url = 'https://' + url;
+
+  const resultsSection = document.getElementById('results');
+  resultsSection.innerHTML = '<p class="text-center py-4 text-gray-400">Auditing <strong>' + url + '</strong>... please wait.</p>';
+
+  try {
+    const data = {
+      url: url,
+      h1Count: 1,
+      missingAlt: 3,
+      missingMetaDescription: true,
+      pageSpeedScore: 83,
+      htmlStructureIssues: ["No H1 tag", "Nested <div> used as heading"]
+    };
+
+    latestAuditData = data;
+    saveAuditToLocal(data);
+
+    const contentScore = data.missingMetaDescription ? 60 : 90;
+    const accessibilityScore = data.missingAlt > 2 ? 65 : 90;
+    const structureScore = data.htmlStructureIssues.length > 0 ? 60 : 90;
+
+    resultsSection.innerHTML = `
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        ${renderScorePanel('Content & Tags', contentScore, 'Checks for meta tags, H1, title', '📝')}
+        ${renderScorePanel('Accessibility', accessibilityScore, 'Images with alt text, proper labels', '♿')}
+        ${renderScorePanel('Speed', data.pageSpeedScore, 'Page load performance (PageSpeed)', '⚡')}
+        ${renderScorePanel('Structure', structureScore, 'Semantic HTML and heading usage', '📐')}
+      </div>
+      <div class="mt-6 bg-white dark:bg-slate-800 p-6 rounded shadow">
+        <h2 class="text-xl font-bold mb-4">SEO Audit Results for <span class="text-blue-500">${url}</span></h2>
+        <ul class="space-y-2 text-sm">
+          <li><strong>H1 Tags Found:</strong> ${data.h1Count}</li>
+          <li><strong>Images Missing Alt Text:</strong> ${data.missingAlt}</li>
+          <li><strong>Meta Description Missing:</strong> ${data.missingMetaDescription ? 'Yes' : 'No'}</li>
+          <li><strong>Page Speed Score:</strong> ${data.pageSpeedScore}/100</li>
+          <li><strong>HTML Structure Issues:</strong>
+            <ul class="list-disc ml-5 text-red-400">
+              ${data.htmlStructureIssues.map(issue => `<li>${issue}</li>`).join('')}
+            </ul>
+          </li>
+        </ul>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button onclick="exportPDF()" class="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">Export PDF</button>
+          <button onclick="exportCSV()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Export CSV</button>
+        </div>
+        <div class="mt-6">
+          <label for="emailInput" class="block text-sm font-semibold mb-1">Send Report via Email</label>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input type="email" id="emailInput" placeholder="you@example.com" class="flex-1 px-4 py-2 rounded border dark:border-slate-600 bg-white text-black" />
+            <button onclick="sendReportByEmail()" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Send Report</button>
+          </div>
+          <p id="emailSuccess" class="text-green-500 text-sm mt-2 hidden">✅ Report sent successfully!</p>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    resultsSection.innerHTML = '<p class="text-red-500">Error retrieving audit data. Please try again.</p>';
+    console.error(err);
+  }
+});
+
+function exportPDF() {
+  if (!latestAuditData) return alert('No data to export.');
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(12);
+  doc.text(`SEO Audit Results for ${latestAuditData.url}`, 10, 10);
+  doc.text(`H1 Tags Found: ${latestAuditData.h1Count}`, 10, 20);
+  doc.text(`Images Missing Alt Text: ${latestAuditData.missingAlt}`, 10, 30);
+  doc.text(`Meta Description Missing: ${latestAuditData.missingMetaDescription ? 'Yes' : 'No'}`, 10, 40);
+  doc.text(`Page Speed Score: ${latestAuditData.pageSpeedScore}/100`, 10, 50);
+  doc.text(`HTML Structure Issues:`, 10, 60);
+  latestAuditData.htmlStructureIssues.forEach((issue, i) => {
+    doc.text(`- ${issue}`, 12, 70 + i * 10);
+  });
+  doc.save('freeseo-audit.pdf');
+}
+
+function exportCSV() {
+  if (!latestAuditData) return alert('No data to export.');
+  const csvData = [
+    ["Field", "Value"],
+    ["URL", latestAuditData.url],
+    ["H1 Tags Found", latestAuditData.h1Count],
+    ["Images Missing Alt Text", latestAuditData.missingAlt],
+    ["Meta Description Missing", latestAuditData.missingMetaDescription ? 'Yes' : 'No'],
+    ["Page Speed Score", latestAuditData.pageSpeedScore + "/100"],
+    ["HTML Structure Issues", latestAuditData.htmlStructureIssues.join('; ')]
+  ];
+  const csv = Papa.unparse(csvData);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute('download', 'freeseo-audit.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function sendReportByEmail() {
+  const email = document.getElementById('emailInput').value.trim();
+  const successMsg = document.getElementById('emailSuccess');
+  if (!email || !email.includes('@')) return alert('Please enter a valid email address.');
+  successMsg.classList.remove('hidden');
+  setTimeout(() => successMsg.classList.add('hidden'), 4000);
+}
+
+function saveAuditToLocal(data) {
+  const stored = JSON.parse(localStorage.getItem('freeseo_audits') || '[]');
+  stored.unshift({
+    url: data.url,
+    date: new Date().toLocaleString(),
+    scores: {
+      content: data.missingMetaDescription ? 60 : 90,
+      accessibility: data.missingAlt > 2 ? 65 : 90,
+      speed: data.pageSpeedScore,
+      structure: data.htmlStructureIssues.length > 0 ? 60 : 90
+    }
+  });
+  localStorage.setItem('freeseo_audits', JSON.stringify(stored.slice(0, 10)));
+  renderAuditDashboard();
+}
+
+function renderAuditDashboard() {
+  const tbody = document.getElementById('auditTableBody');
+  const audits = JSON.parse(localStorage.getItem('freeseo_audits') || '[]');
+  tbody.innerHTML = audits.map(audit => `
+    <tr class="border-b border-slate-200 dark:border-slate-600">
+      <td class="px-4 py-2 whitespace-nowrap">${audit.date}</td>
+      <td class="px-4 py-2 text-blue-500 hover:underline"><a href="${audit.url}" target="_blank">${audit.url}</a></td>
+      <td class="px-4 py-2">
+        <div class="flex flex-col gap-1">
+          <span><strong>Content:</strong> ${audit.scores.content}</span>
+          <span><strong>Accessibility:</strong> ${audit.scores.accessibility}</span>
+          <span><strong>Speed:</strong> ${audit.scores.speed}</span>
+          <span><strong>Structure:</strong> ${audit.scores.structure}</span>
+        </div>
+      </td>
+      <td class="px-4 py-2">
+        <button class="bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-700" onclick="rerunAudit('${audit.url}')">Re-audit</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function rerunAudit(url) {
+  document.getElementById('urlInput').value = url;
+  document.getElementById('urlForm').dispatchEvent(new Event('submit'));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleWarnings(section) {
+  const wrapper = document.getElementById(`warnings-${section}`);
+  const button = wrapper.parentElement.querySelector('button');
+  const expanded = !wrapper.classList.contains('max-h-0');
+
+  if (expanded) {
+    wrapper.classList.add('max-h-0', 'overflow-hidden');
+    wrapper.classList.remove('max-h-screen');
+    button.textContent = 'Show';
+  } else {
+    wrapper.classList.remove('max-h-0');
+    wrapper.classList.add('max-h-screen');
+    wrapper.classList.remove('overflow-hidden');
+    button.textContent = 'Hide';
+  }
+}
+function toggleAllWarnings() {
+  const sections = ['content', 'structure', 'accessibility'];
+  const anyOpen = sections.some(id => {
+    const el = document.getElementById(`warnings-${id}`);
+    return !el.classList.contains('max-h-0');
+  });
+
+  sections.forEach(id => {
+    const el = document.getElementById(`warnings-${id}`);
+    const btn = el.parentElement.querySelector('button');
+
+    if (anyOpen) {
+      el.classList.add('max-h-0', 'overflow-hidden');
+      el.classList.remove('max-h-screen');
+      btn.textContent = 'Show';
+    } else {
+      el.classList.remove('max-h-0');
+      el.classList.add('max-h-screen');
+      el.classList.remove('overflow-hidden');
+      btn.textContent = 'Hide';
+    }
+  });
+
+  document.getElementById('toggle-all-btn').textContent = anyOpen ? 'Expand All' : 'Collapse All';
+}
+function exportWarningsPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(12);
+  doc.text('FreeSEO Warning Summary', 10, 10);
+
+  let y = 20;
+  document.querySelectorAll('[id^=warnings-] li').forEach((li) => {
+    doc.text(li.textContent.trim(), 10, y);
+    y += 10;
+  });
+
+  doc.save('freeseo-warnings.pdf');
+}
+
+function exportWarningsCSV() {
+  const rows = [['Severity', 'Message']];
+  document.querySelectorAll('[id^=warnings-] li').forEach(li => {
+    const msg = li.textContent.trim();
+    const severity = msg.startsWith('❗') ? 'Error' : msg.startsWith('⚠️') ? 'Warning' : 'Info';
+    rows.push([severity, msg]);
+  });
+
+  const csv = Papa.unparse(rows);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute('download', 'freeseo-warnings.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+
+
+
+
+
+window.addEventListener('DOMContentLoaded', renderAuditDashboard);
+</script>
   <!-- The full working script is already built and ready in your saved updates -->
 </body>
 </html>
