@@ -26,7 +26,7 @@
     }
   </style>
 </head>
-<body class="text-gray-800 dark:text-gray-100 dark:bg-slate-900 transition-colors duration-500" onload="AOS.init(); initTheme();">
+<body class="text-gray-800 dark:text-gray-100 dark:bg-slate-900 transition-colors duration-500">
   <!-- Navigation bar -->
 <nav class= "bg-white dark:bg-slate-800 shadow-md px-4 py-3 flex items-center justify-between flex-wrap sticky top-0 z-50">
 <div class="flex items-center space-x-2">
@@ -517,19 +517,19 @@ function exportWarningsCSV() {
 
 
 window.addEventListener('DOMContentLoaded', renderAuditDashboard);
-</script>
-  <!-- The full working script is already built and ready in your saved updates -->
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script>
-  AOS.init({
-    duration: 700,
-    easing: 'ease-out',
-    once: true
+  document.addEventListener('DOMContentLoaded', () => {
+    AOS.init({
+      duration: 700,
+      easing: 'ease-out',
+      once: true
+    });
+    initTheme();
+    renderAuditDashboard(); // if not already inside your other load functions
   });
 </script>
 
-<body onload="AOS.init(); initTheme();">
 
 </body>
 </html>
